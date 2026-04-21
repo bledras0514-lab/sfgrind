@@ -1,0 +1,3847 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SFGRIND">
+<meta name="theme-color" content="#0F0F12">
+<meta name="description" content="🏀 86kg SF 루틴 트래커 — 웨이트 기록, 점진적 과부화, 휴식 타이머">
+<link rel="manifest" href="manifest.json">
+<!-- PWA icons -->
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>🏀 SFGRIND 루틴 트래커</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange:#FF6B1A; --dark:#0F0F12; --card:#1A1A20; --card2:#1E1E26;
+  --border:#2A2A35; --text:#F0EDE8; --muted:#666; --green:#4ADE80;
+  --blue:#60A5FA; --yellow:#FBBF24; --red:#F87171; --teal:#2DD4BF;
+  --fig:#C8E6FA; --fig2:#56CCF2; --joint:#FF6B1A; --equip:#7B8CDE;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;padding-bottom:calc(90px + env(safe-area-inset-bottom));}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 120px,rgba(255,107,26,.02) 120px,rgba(255,107,26,.02) 121px);pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 14px;}
+
+/* ── EXERCISE THUMBNAIL ANIMATIONS ── */
+@keyframes bench-down  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(9px)} }
+@keyframes bench-arms  { 0%,100%{transform:rotate(0deg)  scaleY(1)} 50%{transform:rotate(12deg) scaleY(.85)} }
+@keyframes pullup-body { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes pullup-arms { 0%,100%{transform:scaleY(1) rotate(0)} 50%{transform:scaleY(.8) rotate(-5deg)} }
+@keyframes ohp-bar     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-11px)} }
+@keyframes ohp-arms    { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.75)} }
+@keyframes row-torso   { 0%,100%{transform:rotate(-40deg)} 50%{transform:rotate(-28deg)} }
+@keyframes row-arms    { 0%,100%{transform:scaleY(1) rotate(0)} 50%{transform:scaleY(.7) rotate(-15deg)} }
+@keyframes squat-body  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(14px)} }
+@keyframes squat-legs  { 0%,100%{transform:rotate(0) scaleY(1)} 50%{transform:rotate(10deg) scaleY(.78)} }
+@keyframes jump-body   { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-16px)} }
+@keyframes lp-legs     { 0%,100%{transform:scaleX(.8) rotate(0)} 50%{transform:scaleX(1.05) rotate(-5deg)} }
+@keyframes calf-heel   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes lat-arms    { 0%,100%{transform:rotate(-60deg) scaleY(1)} 50%{transform:rotate(-20deg) scaleY(.75)} }
+@keyframes shp-arms    { 0%,100%{transform:scaleY(.8) rotate(0)} 50%{transform:scaleY(1.1) rotate(3deg)} }
+@keyframes curl-fore   { 0%,100%{transform:rotate(60deg)} 50%{transform:rotate(130deg)} }
+@keyframes rdl-torso   { 0%,100%{transform:rotate(-55deg)} 50%{transform:rotate(-20deg)} }
+@keyframes lunge-front { 0%,100%{transform:rotate(20deg) scaleY(1)} 50%{transform:rotate(15deg) scaleY(.88)} }
+@keyframes lunge-back  { 0%,100%{transform:rotate(-30deg) scaleY(1)} 50%{transform:rotate(-25deg) scaleY(.88)} }
+@keyframes leg-ext     { 0%,100%{transform:rotate(80deg)} 50%{transform:rotate(10deg)} }
+@keyframes run-legF    { 0%,100%{transform:rotate(-20deg)} 50%{transform:rotate(30deg)} }
+@keyframes run-legB    { 0%,100%{transform:rotate(30deg)} 50%{transform:rotate(-20deg)} }
+@keyframes run-armF    { 0%,100%{transform:rotate(-30deg)} 50%{transform:rotate(20deg)} }
+@keyframes run-armB    { 0%,100%{transform:rotate(20deg)} 50%{transform:rotate(-30deg)} }
+@keyframes run-body    { 0%,100%{transform:translateX(0)} 50%{transform:translateX(3px)} }
+@keyframes ball-arc    { 0%{transform:translate(0,0)} 40%{transform:translate(14px,-18px)} 80%,100%{transform:translate(28px,-6px)} }
+@keyframes plank-body  { 0%,100%{opacity:1} 50%{opacity:.75} }
+@keyframes setpt-ball  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+/* SVG thumb container */
+.ex-svg-thumb {
+  width:62px;height:62px;flex-shrink:0;
+  background:linear-gradient(160deg,#13161e,#0e1018);
+  border-radius:8px;margin:6px 0 6px 6px;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;cursor:pointer;position:relative;
+}
+.ex-svg-thumb svg { width:54px;height:54px; }
+.ex-svg-thumb:active { transform:scale(.96); }
+
+/* Enlarged modal */
+.thumb-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;}
+.thumb-modal.open{opacity:1;pointer-events:all;}
+.thumb-sheet{background:var(--card);border-radius:22px 22px 0 0;padding:18px 18px 36px;width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.thumb-modal.open .thumb-sheet{transform:translateY(0);}
+.thumb-drag{width:34px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;}
+.thumb-modal-name{font-family:'Black Han Sans',sans-serif;font-size:17px;color:var(--orange);margin-bottom:12px;}
+.thumb-modal-svg-wrap{background:#0d1018;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:12px;height:200px;}
+.thumb-modal-svg-wrap svg{width:160px;height:160px;}
+.thumb-modal-tips{margin-top:12px;}
+.thumb-modal-tips li{font-size:12px;color:var(--muted);margin-left:16px;margin-bottom:4px;line-height:1.5;}
+
+/* Header */
+.header{padding:22px 0 16px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.header-top{display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:'Black Han Sans',sans-serif;font-size:21px;color:var(--orange);}
+.logo span{color:var(--text);}
+.header-date{font-size:10px;color:var(--muted);letter-spacing:.8px;margin-top:3px;}
+.weight-wrap{position:relative;}
+.weight-badge{background:var(--orange);color:#fff;font-family:'Black Han Sans',sans-serif;font-size:13px;padding:4px 10px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none;transition:opacity .15s;}
+.weight-badge:hover{opacity:.85;}
+.weight-popover{position:absolute;top:calc(100% + 8px);right:0;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px;width:170px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.6);display:none;}
+.weight-popover.open{display:block;}
+.weight-popover label{font-size:10px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:6px;}
+.weight-popover input{width:100%;background:var(--dark);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;padding:7px 10px;outline:none;text-align:center;}
+.weight-popover input:focus{border-color:var(--orange);}
+.wpop-hint{font-size:10px;color:#444;margin-top:5px;text-align:center;}
+
+/* Week Nav */
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 14px;}
+.week-nav-btn{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.week-nav-btn:hover{border-color:var(--orange);color:var(--orange);}
+.week-nav-center{text-align:center;flex:1;}
+.week-nav-label{font-family:'Black Han Sans',sans-serif;font-size:13px;color:var(--text);}
+.week-nav-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.week-nav-today{font-size:10px;color:var(--orange);cursor:pointer;margin-top:2px;text-decoration:underline;}
+
+/* Year toggle */
+.year-toggle{display:flex;justify-content:center;margin-bottom:14px;}
+.year-toggle-btn{font-size:11px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 14px;cursor:pointer;transition:all .15s;font-family:'Noto Sans KR',sans-serif;}
+.year-toggle-btn:hover,.year-toggle-btn.active{border-color:var(--orange);color:var(--orange);}
+.year-view{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px;display:none;}
+.year-view.open{display:block;}
+.year-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.year-label{font-family:'Black Han Sans',sans-serif;font-size:15px;color:var(--text);}
+.year-arrow{width:26px;height:26px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.year-arrow:hover{border-color:var(--orange);color:var(--orange);}
+.year-months{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.year-month{background:var(--card2);border-radius:8px;padding:6px;}
+.year-month-name{font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px;text-align:center;}
+.year-weeks{display:flex;flex-direction:column;gap:2px;}
+.year-dot{width:100%;height:8px;border-radius:2px;background:var(--border);cursor:pointer;transition:all .12s;}
+.year-dot.has-data{background:rgba(255,107,26,.45);}
+.year-dot.full{background:var(--green);opacity:.85;}
+.year-dot.this-week{outline:1.5px solid var(--orange);outline-offset:1px;}
+
+/* Summary */
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;}
+.summary-title{font-family:'Black Han Sans',sans-serif;font-size:13px;color:var(--text);margin-bottom:10px;}
+.summary-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.summary-day-block{text-align:center;}
+.summary-day-name{font-size:8px;color:var(--muted);margin-bottom:3px;font-weight:700;}
+.summary-dot{width:26px;height:26px;border-radius:7px;background:var(--card2);border:1.5px solid var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .2s;}
+.summary-dot.full{background:var(--green);border-color:var(--green);}
+.summary-dot.partial{background:var(--orange);border-color:var(--orange);}
+.summary-pct{font-size:8px;color:var(--muted);margin-top:2px;}
+
+/* Day tabs */
+.day-tabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:14px;scrollbar-width:none;}
+.day-tabs::-webkit-scrollbar{display:none;}
+.day-tab{flex-shrink:0;padding:6px 12px;border-radius:18px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--muted);transition:all .18s;white-space:nowrap;}
+.day-tab:hover{border-color:var(--orange);color:var(--orange);}
+.day-tab.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+.day-tab.completed{border-color:var(--green);color:var(--green);}
+.day-tab.completed.active{background:var(--green);border-color:var(--green);color:var(--dark);}
+
+/* Day card */
+.day-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:14px;}
+.day-header{padding:13px 16px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.day-title{font-family:'Black Han Sans',sans-serif;font-size:16px;color:var(--orange);}
+.day-subtitle{font-size:10px;color:var(--muted);margin-top:2px;}
+.day-progress{text-align:right;}
+.progress-num{font-family:'Black Han Sans',sans-serif;font-size:19px;color:var(--text);}
+.progress-num span{font-size:11px;color:var(--muted);}
+.progress-bar-wrap{width:52px;height:3px;background:var(--border);border-radius:2px;margin-top:4px;margin-left:auto;}
+.progress-bar-fill{height:100%;background:var(--orange);border-radius:2px;transition:width .4s ease;}
+.section-label{padding:9px 16px 4px;font-size:9px;color:var(--orange);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;}
+
+/* Exercise row */
+.exercise-item{display:flex;align-items:stretch;margin:2px 6px;border-radius:10px;transition:background .15s;}
+.exercise-item:hover{background:var(--card2);}
+.exercise-item.checked .ex-name-input{text-decoration:line-through;color:var(--muted) !important;}
+.exercise-item.checked .ex-field-input{color:#3a3a44 !important;}
+.ex-right{flex:1;min-width:0;padding:8px 10px 8px 8px;}
+.ex-top{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.checkbox{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.exercise-item.checked .checkbox{background:var(--green);border-color:var(--green);}
+.checkbox-icon{display:none;color:var(--dark);font-size:10px;font-weight:900;}
+.exercise-item.checked .checkbox-icon{display:block;}
+.ex-name-input{flex:1;min-width:0;background:transparent;border:1px solid transparent;outline:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;color:var(--text);padding:1px 4px;border-radius:4px;transition:all .12s;}
+.ex-name-input:hover{border-color:var(--border);}
+.ex-name-input:focus{background:rgba(255,107,26,.07);border-color:var(--orange);}
+.ex-tag{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.4px;padding:1px 5px;border-radius:3px;}
+.tag-func{background:rgba(251,191,36,.15);color:var(--yellow);}
+.tag-ball{background:rgba(255,107,26,.15);color:var(--orange);}
+.tag-safe{background:rgba(96,165,250,.15);color:var(--blue);}
+.tag-cardio{background:rgba(74,222,128,.15);color:var(--green);}
+.ex-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:1px;}
+.ex-field{display:flex;flex-direction:column;gap:2px;}
+.ex-field-label{font-size:8px;color:var(--muted);letter-spacing:.8px;font-weight:700;}
+.ex-field-input{background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:500;padding:4px 7px;outline:none;width:100%;transition:border-color .12s;}
+.ex-field-input:focus{border-color:var(--orange);}
+.ex-field-input::placeholder{color:#333;}
+.ex-prev{display:flex;align-items:center;gap:5px;margin-top:5px;padding:4px 7px;background:rgba(255,255,255,.025);border-radius:6px;border-left:2px solid rgba(255,107,26,.3);}
+.ex-prev-label{font-size:8px;color:#555;font-weight:700;letter-spacing:.5px;flex-shrink:0;}
+.ex-prev-val{font-size:10px;color:#555;font-style:italic;}
+.ex-prev-val.has{color:var(--muted);}
+.ex-prev-arrow{font-size:9px;font-weight:700;margin-left:2px;}
+.arr-up{color:var(--green);}
+.arr-dn{color:var(--red);}
+.ex-detail-txt{font-size:10px;color:var(--muted);margin-top:2px;padding-left:2px;}
+
+/* ── SET LOG (세트별 실제 기록) ── */
+.set-log-wrap{margin-top:6px;padding:0 2px;}
+.set-log-goal{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 8px 6px;
+  font-size:9px;color:var(--muted);letter-spacing:.6px;font-weight:700;
+}
+.set-log-goal-val{
+  background:rgba(255,107,26,.08);border:1px solid rgba(255,107,26,.2);
+  border-radius:6px;padding:2px 8px;font-size:10px;
+  color:rgba(255,107,26,.8);font-weight:700;
+}
+.set-log-rows{display:flex;flex-direction:column;gap:4px;margin-bottom:5px;}
+.set-log-row{
+  display:flex;align-items:center;gap:6px;
+  background:var(--card2);border-radius:8px;
+  padding:5px 8px;border:1px solid var(--border);
+  transition:border-color .15s;
+}
+.set-log-row:has(input:focus){border-color:var(--orange);}
+.set-log-num{
+  font-family:'Black Han Sans',sans-serif;font-size:11px;
+  color:var(--orange);min-width:18px;text-align:center;flex-shrink:0;
+}
+.set-log-input{
+  background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'Noto Sans KR',sans-serif;
+  font-size:13px;font-weight:600;
+  text-align:center;
+}
+.set-log-input.kg-input{width:52px;}
+.set-log-input.reps-input{width:36px;}
+.set-log-sep{font-size:11px;color:var(--muted);flex-shrink:0;}
+.set-log-unit{font-size:9px;color:var(--muted);flex-shrink:0;}
+.set-log-del{
+  margin-left:auto;background:transparent;border:none;
+  color:var(--muted);cursor:pointer;font-size:12px;
+  padding:2px 4px;border-radius:4px;flex-shrink:0;
+  transition:color .12s;line-height:1;
+}
+.set-log-del:hover{color:var(--red);}
+.set-log-row.done .set-log-num{color:var(--green);}
+.set-log-row.done{border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.04);}
+.set-log-add{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  width:100%;padding:6px;border-radius:8px;
+  border:1.5px dashed var(--border);background:transparent;
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;transition:all .15s;
+}
+.set-log-add:hover{border-color:var(--orange);color:var(--orange);}
+.set-log-summary{
+  display:flex;align-items:center;gap:8px;margin-top:4px;
+  padding:4px 8px;font-size:9px;color:var(--muted);
+}
+.set-log-summary-val{
+  font-family:'Black Han Sans',sans-serif;font-size:12px;color:var(--text);
+}
+.set-log-summary .done-count{color:var(--green);}
+.memo-area{margin:5px 8px 8px;background:var(--card2);border-radius:9px;overflow:hidden;}
+.memo-label{padding:7px 11px 3px;font-size:9px;color:var(--muted);letter-spacing:1px;}
+.memo-input{width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:12px;padding:3px 11px 9px;resize:none;min-height:44px;}
+.memo-input::placeholder{color:#333;}
+.divider{height:1px;background:var(--border);margin:3px 16px;}
+.rest-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 16px;text-align:center;}
+.rest-icon{font-size:34px;margin-bottom:9px;}
+.rest-title{font-family:'Black Han Sans',sans-serif;font-size:17px;color:var(--text);margin-bottom:5px;}
+.rest-text{font-size:12px;color:var(--muted);line-height:1.6;}
+.rest-tip{margin-top:12px;padding:9px 14px;background:var(--card2);border-radius:9px;font-size:11px;color:var(--orange);line-height:1.5;}
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:90;
+  background:var(--card);border-top:1px solid var(--border);
+  display:flex;max-width:480px;margin:0 auto;
+  padding:0 0 env(safe-area-inset-bottom,0);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:10px 0 8px;gap:3px;cursor:pointer;border:none;background:transparent;
+  color:var(--muted);transition:color .15s;font-family:'Noto Sans KR',sans-serif;
+}
+.nav-btn.active{color:var(--orange);}
+.nav-btn svg{width:22px;height:22px;}
+.nav-btn span{font-size:10px;font-weight:700;}
+
+/* ── STATS PAGE ── */
+.stats-page{display:none;}
+.stats-page.active{display:block;}
+.home-page{display:block;}
+.home-page.hidden{display:none;}
+
+.stats-header{padding:22px 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.stats-title{font-family:'Black Han Sans',sans-serif;font-size:21px;color:var(--orange);}
+.stats-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* Stat cards row */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 10px;text-align:center;}
+.stat-card-val{font-family:'Black Han Sans',sans-serif;font-size:20px;color:var(--text);}
+.stat-card-val span{font-size:11px;color:var(--muted);}
+.stat-card-lbl{font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:.5px;}
+
+/* Section titles */
+.stats-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.stats-section-title{font-family:'Black Han Sans',sans-serif;font-size:13px;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.stats-section-title span{font-size:10px;color:var(--muted);font-family:'Noto Sans KR',sans-serif;font-weight:400;}
+
+/* Exercise selector pills */
+.ex-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.ex-pill{padding:4px 12px;border-radius:16px;font-size:11px;font-weight:700;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Noto Sans KR',sans-serif;}
+.ex-pill:hover{border-color:var(--orange);color:var(--orange);}
+.ex-pill.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+
+/* Canvas charts */
+.chart-wrap{position:relative;width:100%;height:160px;}
+.chart-wrap canvas{width:100% !important;height:100% !important;}
+.chart-empty{display:flex;align-items:center;justify-content:center;height:100px;font-size:12px;color:var(--muted);}
+
+/* Heatmap */
+.heatmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.heatmap-label-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+.heatmap-day-label{font-size:8px;color:var(--muted);text-align:center;font-weight:700;}
+.heatmap-cell{aspect-ratio:1;border-radius:3px;background:var(--card2);}
+.heatmap-cell.p1{background:rgba(255,107,26,.25);}
+.heatmap-cell.p2{background:rgba(255,107,26,.5);}
+.heatmap-cell.p3{background:rgba(255,107,26,.75);}
+.heatmap-cell.p4{background:var(--orange);}
+.heatmap-cell.done{background:var(--green);opacity:.85;}
+.heatmap-legend{display:flex;align-items:center;gap:5px;margin-top:8px;justify-content:flex-end;}
+.heatmap-legend-cell{width:10px;height:10px;border-radius:2px;}
+.heatmap-legend span{font-size:9px;color:var(--muted);}
+
+/* PR badge */
+.pr-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.pr-row:last-child{border-bottom:none;}
+.pr-name{font-size:12px;color:var(--text);font-weight:600;}
+.pr-val{font-family:'Black Han Sans',sans-serif;font-size:15px;color:var(--orange);}
+.pr-1rm{font-size:10px;color:var(--muted);margin-top:1px;}
+.pr-delta{font-size:10px;font-weight:700;margin-left:6px;}
+.pr-delta.up{color:var(--green);}
+.pr-delta.dn{color:var(--red);}
+
+/* ── REORDER MODE ── */
+.reorder-bar{
+  display:none;align-items:center;justify-content:space-between;
+  background:rgba(255,107,26,.08);border:1.5px solid rgba(255,107,26,.3);
+  border-radius:12px;padding:8px 14px;margin-bottom:10px;gap:10px;
+}
+.reorder-bar.active{display:flex;}
+.reorder-bar-label{font-size:11px;color:var(--orange);font-weight:700;flex:1;}
+.reorder-bar-done{
+  padding:5px 14px;border-radius:16px;background:var(--orange);border:none;
+  color:#fff;font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;
+}
+/* exercise-item in reorder mode */
+.reorder-active .exercise-item{
+  position:relative;
+  transition:background .15s, transform .15s, box-shadow .15s;
+}
+.reorder-active .exercise-item.reorder-selected{
+  background:rgba(255,107,26,.12);
+  border:1.5px solid rgba(255,107,26,.5);
+  border-radius:10px;
+  transform:scale(1.01);
+  box-shadow:0 4px 16px rgba(255,107,26,.2);
+}
+.reorder-handle{
+  display:none;
+  flex-direction:column;gap:3px;
+  padding:6px 8px;flex-shrink:0;cursor:grab;align-self:center;
+}
+.reorder-handle span{
+  display:block;width:18px;height:2px;
+  background:var(--muted);border-radius:1px;
+}
+.reorder-active .reorder-handle{display:flex;}
+/* order buttons shown in reorder mode */
+.reorder-btns{
+  display:none;flex-direction:column;gap:3px;flex-shrink:0;align-self:center;
+}
+.reorder-active .reorder-btns{display:flex;}
+.reorder-btn{
+  width:24px;height:24px;border-radius:6px;
+  background:var(--card2);border:1px solid var(--border);
+  color:var(--muted);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .12s;line-height:1;
+}
+.reorder-btn:hover:not(:disabled){background:var(--orange);border-color:var(--orange);color:#fff;}
+.reorder-btn:disabled{opacity:.25;cursor:default;}
+/* hide non-essential UI in reorder mode */
+.reorder-active .ex-fields,
+.reorder-active .ex-prev,
+.reorder-active .ex-detail-txt{opacity:.4;pointer-events:none;}
+.reorder-active .checkbox{opacity:.4;pointer-events:none;}
+
+/* ── TOOLBAR BUTTONS (day card header) ── */
+.day-toolbar{display:flex;gap:6px;}
+.toolbar-btn{
+  width:30px;height:30px;border-radius:8px;
+  border:1.5px solid var(--border);background:transparent;
+  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .15s;
+}
+.toolbar-btn:hover{border-color:var(--orange);color:var(--orange);}
+.toolbar-btn.active-reorder{border-color:var(--orange);background:rgba(255,107,26,.12);color:var(--orange);}
+.toolbar-btn.active-ss{border-color:var(--teal);background:rgba(45,212,191,.12);color:var(--teal);}
+
+/* superset connector line between linked items */
+.superset-connector{
+  display:flex;align-items:center;gap:8px;
+  padding:2px 14px 2px 84px;
+  margin:-2px 6px;
+}
+.superset-connector-line{
+  flex:1;height:2px;
+  background:linear-gradient(90deg,var(--teal),rgba(45,212,191,.3));
+  border-radius:1px;
+}
+.superset-connector-label{
+  font-size:9px;color:var(--teal);font-weight:700;
+  letter-spacing:.8px;white-space:nowrap;
+}
+/* item that is part of a superset */
+.exercise-item.in-superset{
+  border-left:3px solid var(--teal);
+  border-radius:0 10px 10px 0;
+  margin-left:12px;
+}
+.exercise-item.in-superset.superset-first{border-radius:0 10px 0 0;}
+.exercise-item.in-superset.superset-last{border-radius:0 0 10px 0;}
+
+/* superset mode: items become tappable */
+.superset-active .exercise-item{
+  cursor:pointer;transition:background .12s,border .12s;
+}
+.superset-active .exercise-item:hover{
+  background:rgba(45,212,191,.06);
+}
+.superset-active .exercise-item.ss-selected{
+  background:rgba(45,212,191,.14);
+  border:1.5px solid var(--teal);
+  border-radius:10px;
+}
+/* dim fields in superset mode */
+.superset-active .ex-fields,
+.superset-active .ex-prev,
+.superset-active .ex-detail-txt,
+.superset-active .checkbox{ opacity:.35; pointer-events:none; }
+/* ss selection indicator circle */
+.ss-circle{
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--border);flex-shrink:0;
+  display:none;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;transition:all .15s;
+}
+.superset-active .ss-circle{display:flex;}
+.ss-circle.picked{background:var(--teal);border-color:var(--teal);color:var(--dark);}
+/* selection instruction toast in superset bar */
+.superset-bar{
+  display:none;align-items:center;justify-content:space-between;
+  background:rgba(45,212,191,.06);border:1.5px solid rgba(45,212,191,.25);
+  border-radius:12px;padding:8px 14px;margin-bottom:10px;gap:10px;
+}
+.superset-bar.active{display:flex;}
+.superset-bar-label{font-size:11px;color:var(--teal);font-weight:700;flex:1;line-height:1.5;}
+.superset-bar-done{
+  padding:5px 12px;border-radius:14px;
+  background:transparent;border:1.5px solid rgba(45,212,191,.4);
+  color:var(--teal);font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;transition:all .15s;white-space:nowrap;
+}
+.superset-bar-done:hover{background:var(--teal);color:var(--dark);}
+
+/* ── WORKOUT START CARD ── */
+.start-card{
+  background:linear-gradient(135deg,#1C1812,#231A0F);
+  border:1.5px solid rgba(255,107,26,.3);border-radius:18px;
+  padding:18px 16px 16px;margin-bottom:14px;position:relative;overflow:hidden;
+}
+.start-card::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 75% 30%,rgba(255,107,26,.1),transparent 60%);
+  pointer-events:none;}
+.start-card.dismissed{display:none;}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sc-badge{font-size:9px;color:var(--orange);letter-spacing:1.5px;font-weight:700;
+  background:rgba(255,107,26,.12);padding:3px 8px;border-radius:8px;}
+.sc-date{font-size:10px;color:var(--muted);}
+.sc-title{font-family:'Black Han Sans',sans-serif;font-size:19px;color:var(--text);
+  margin-bottom:2px;line-height:1.2;position:relative;z-index:1;}
+.sc-sub{font-size:10px;color:var(--muted);margin-bottom:12px;position:relative;z-index:1;}
+.sc-stats{display:flex;gap:0;margin-bottom:14px;
+  background:rgba(255,255,255,.04);border-radius:10px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);position:relative;z-index:1;}
+.sc-stat{flex:1;padding:10px 8px;text-align:center;border-right:1px solid rgba(255,255,255,.06);}
+.sc-stat:last-child{border-right:none;}
+.sc-stat-val{font-family:'Black Han Sans',sans-serif;font-size:16px;color:var(--text);line-height:1;}
+.sc-stat-val span{font-size:9px;color:var(--muted);}
+.sc-stat-lbl{font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
+.sc-btn{
+  width:100%;padding:12px;background:var(--orange);border:none;border-radius:12px;
+  color:#fff;font-family:'Black Han Sans',sans-serif;font-size:15px;
+  cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  position:relative;z-index:1;
+  box-shadow:0 4px 16px rgba(255,107,26,.3);
+}
+.sc-btn:hover{opacity:.88;transform:translateY(-1px);}
+.sc-skip{margin-top:10px;font-size:10px;color:var(--muted);
+  cursor:pointer;text-align:center;text-decoration:underline;
+  text-underline-offset:2px;position:relative;z-index:1;}
+.sc-skip:hover{color:var(--text);}
+
+/* ── ADD EXERCISE MODAL ── */
+.addex-overlay{
+  position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.addex-overlay.open{opacity:1;pointer-events:all;}
+.addex-sheet{
+  width:100%;max-width:480px;background:var(--card);
+  border-radius:22px 22px 0 0;padding:18px 18px 44px;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  max-height:90vh;overflow-y:auto;
+}
+.addex-overlay.open .addex-sheet{transform:translateY(0);}
+.addex-drag{width:34px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+
+/* edit mode indicator */
+.addex-sheet.edit-mode .addex-title::before{
+  content:'✏️ ';
+}
+.ex-edit-btn{
+  background:transparent;border:none;cursor:pointer;
+  color:var(--muted);font-size:13px;padding:2px 5px;
+  border-radius:5px;transition:all .15s;flex-shrink:0;
+  line-height:1;
+}
+.ex-edit-btn:hover{color:var(--orange);background:rgba(255,107,26,.1);}
+.addex-title{font-family:'Black Han Sans',sans-serif;font-size:17px;color:var(--text);margin-bottom:4px;}
+.addex-sub{font-size:11px;color:var(--muted);margin-bottom:16px;}
+/* type selector */
+.addex-types{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;}
+.addex-type{
+  padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;text-align:center;
+  font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;
+  transition:all .15s;
+}
+.addex-type:hover{border-color:var(--orange);color:var(--orange);}
+.addex-type.selected{background:rgba(255,107,26,.12);border-color:var(--orange);color:var(--orange);}
+.addex-type-icon{font-size:18px;display:block;margin-bottom:4px;}
+/* fields */
+.addex-form{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.addex-field{display:flex;flex-direction:column;gap:4px;}
+.addex-label{font-size:9px;color:var(--muted);letter-spacing:.8px;font-weight:700;}
+.addex-input{
+  background:var(--card2);border:1.5px solid var(--border);border-radius:9px;
+  color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:14px;
+  padding:9px 12px;outline:none;width:100%;
+}
+.addex-input:focus{border-color:var(--orange);}
+.addex-input::placeholder{color:#444;}
+.addex-row{display:flex;gap:8px;}
+.addex-row .addex-field{flex:1;}
+/* section label for fields */
+.addex-section-lbl{font-size:9px;color:var(--orange);letter-spacing:1.2px;font-weight:700;
+  margin-bottom:2px;margin-top:4px;}
+/* add button */
+.addex-add-btn{
+  width:100%;padding:12px;background:var(--orange);border:none;border-radius:12px;
+  color:#fff;font-family:'Black Han Sans',sans-serif;font-size:15px;
+  cursor:pointer;transition:all .15s;
+}
+.addex-add-btn:hover{opacity:.88;}
+/* section picker */
+.addex-sections{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.addex-section-opt{
+  padding:8px 12px;border-radius:9px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;
+  transition:all .15s;text-align:left;
+}
+.addex-section-opt:hover{border-color:var(--orange);color:var(--orange);}
+.addex-section-opt.selected{background:rgba(255,107,26,.1);border-color:var(--orange);color:var(--orange);}
+/* add section button in day card */
+.add-exercise-row{
+  display:flex;justify-content:center;padding:10px 0 4px;
+}
+.add-exercise-btn{
+  display:flex;align-items:center;gap:6px;padding:7px 16px;
+  border-radius:20px;border:1.5px dashed var(--border);background:transparent;
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;transition:all .15s;
+}
+.add-exercise-btn:hover{border-color:var(--orange);color:var(--orange);}
+
+
+/* ── SESSION BAR ── */
+.session-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card2);border:1px solid var(--border);border-radius:12px;
+  padding:8px 12px;margin-bottom:14px;gap:8px;
+  transition:border-color .3s,background .3s;
+}
+.session-bar.running{border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.04);}
+.session-left{display:flex;flex-direction:column;gap:1px;}
+.session-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:700;}
+.session-time-display{font-family:'Black Han Sans',sans-serif;font-size:20px;color:var(--text);min-width:70px;}
+.session-time-display.running{color:var(--green);}
+.session-btns{display:flex;gap:5px;align-items:center;}
+.session-btn{
+  padding:5px 11px;border-radius:16px;font-size:11px;font-weight:700;
+  border:1.5px solid var(--border);background:transparent;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;transition:all .15s;color:var(--muted);
+}
+.session-btn.stop {border-color:var(--orange);color:var(--orange);}
+.session-btn.stop:hover{background:var(--orange);color:#fff;}
+.session-btn.edit {border-color:var(--border);color:var(--muted);padding:5px 8px;font-size:13px;}
+.session-btn.edit:hover{border-color:var(--blue);color:var(--blue);}
+.session-btn.reset{border-color:var(--border);color:var(--muted);padding:5px 8px;font-size:13px;}
+.session-btn.reset:hover{border-color:var(--red);color:var(--red);}
+.session-kcal{font-size:11px;color:var(--muted);text-align:right;line-height:1.5;flex-shrink:0;}
+.session-kcal strong{color:var(--yellow);font-size:14px;display:block;}
+
+/* ── SESSION EDIT MODAL ── */
+.se-overlay{
+  position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.se-overlay.open{opacity:1;pointer-events:all;}
+.se-card{
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:24px 20px;width:88%;max-width:310px;
+}
+.se-title{font-family:'Black Han Sans',sans-serif;font-size:16px;color:var(--text);margin-bottom:5px;}
+.se-sub{font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+.se-fields{display:flex;gap:8px;margin-bottom:16px;}
+.se-field{flex:1;display:flex;flex-direction:column;gap:5px;align-items:center;}
+.se-field label{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px;}
+.se-input{
+  width:100%;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:'Noto Sans KR',sans-serif;
+  font-size:20px;font-weight:700;padding:10px 6px;outline:none;text-align:center;
+}
+.se-input:focus{border-color:var(--orange);}
+.se-unit{font-size:10px;color:var(--muted);}
+.se-btns{display:flex;gap:8px;}
+.se-btn{
+  flex:1;padding:11px;border-radius:12px;font-size:13px;font-weight:700;
+  border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s;
+}
+.se-btn-cancel{background:var(--card2);color:var(--muted);}
+.se-btn-save{background:var(--orange);color:#fff;}
+.se-btn-save:hover{opacity:.88;}
+
+/* ── WEIGHT CONFIRM MODAL ── */
+.wc-overlay{
+  position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.wc-overlay.open{opacity:1;pointer-events:all;}
+.wc-card{
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:24px 22px;width:88%;max-width:340px;text-align:center;
+}
+.wc-icon{font-size:36px;margin-bottom:10px;}
+.wc-title{font-family:'Black Han Sans',sans-serif;font-size:17px;color:var(--text);margin-bottom:4px;}
+.wc-sub{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+.wc-current{
+  font-family:'Black Han Sans',sans-serif;font-size:42px;color:var(--orange);
+  margin-bottom:6px;
+}
+.wc-current span{font-size:18px;color:var(--muted);}
+.wc-input-row{display:flex;gap:8px;align-items:center;margin-bottom:16px;}
+.wc-input{
+  flex:1;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:700;
+  padding:10px;outline:none;text-align:center;
+}
+.wc-input:focus{border-color:var(--orange);}
+.wc-btns{display:flex;gap:8px;}
+.wc-btn{
+  flex:1;padding:11px;border-radius:12px;font-size:13px;font-weight:700;
+  border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s;
+}
+.wc-btn-yes{background:var(--orange);color:#fff;}
+.wc-btn-yes:hover{opacity:.88;}
+.wc-btn-update{background:var(--green);color:var(--dark);}
+.wc-btn-update:hover{opacity:.88;}
+
+/* ── STATS extras ── */
+.stat-cards-2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.stat-card-wide{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.stat-card-wide-icon{font-size:22px;}
+.stat-card-wide-body{}
+.stat-card-wide-val{font-family:'Black Han Sans',sans-serif;font-size:18px;color:var(--text);}
+.stat-card-wide-val span{font-size:11px;color:var(--muted);}
+.stat-card-wide-lbl{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.5px;}
+
+/* ── REST TIMER ── */
+@keyframes timer-tick { from{stroke-dashoffset:0} }
+@keyframes timer-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+
+.rest-timer-overlay {
+  position:fixed;inset:0;z-index:400;
+  display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,0);
+  pointer-events:none;transition:background .3s;
+}
+.rest-timer-overlay.open{background:rgba(0,0,0,.7);pointer-events:all;}
+
+.rest-timer-sheet {
+  width:100%;max-width:480px;
+  background:var(--card);
+  border-radius:26px 26px 0 0;
+  padding:20px 22px 44px;
+  transform:translateY(100%);
+  transition:transform .32s cubic-bezier(.4,0,.2,1);
+}
+.rest-timer-overlay.open .rest-timer-sheet{transform:translateY(0);}
+
+.rt-drag{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.rt-label{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-align:center;margin-bottom:16px;font-weight:700;}
+
+/* Ring */
+.rt-ring-wrap{display:flex;justify-content:center;margin-bottom:20px;position:relative;}
+.rt-ring-wrap svg{transform:rotate(-90deg);}
+.rt-bg-circle{fill:none;stroke:var(--border);stroke-width:8;}
+.rt-progress-circle{
+  fill:none;stroke:var(--orange);stroke-width:8;stroke-linecap:round;
+  transition:stroke-dashoffset .9s linear, stroke .3s;
+}
+.rt-ring-wrap.done .rt-progress-circle{stroke:var(--green);}
+.rt-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;pointer-events:none;
+}
+.rt-time{font-family:'Black Han Sans',sans-serif;font-size:42px;color:var(--text);line-height:1;}
+.rt-time-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* Preset buttons */
+.rt-presets{display:flex;gap:8px;justify-content:center;margin-bottom:18px;}
+.rt-preset{
+  padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  border:1.5px solid var(--border);background:transparent;color:var(--muted);
+  cursor:pointer;transition:all .15s;font-family:'Noto Sans KR',sans-serif;
+}
+.rt-preset:hover{border-color:var(--orange);color:var(--orange);}
+.rt-preset.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+
+/* Control buttons */
+.rt-controls{display:flex;gap:10px;justify-content:center;}
+.rt-btn{
+  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  transition:all .15s;
+}
+.rt-btn-main{
+  width:68px;height:68px;font-size:24px;
+  background:var(--orange);color:#fff;
+  box-shadow:0 4px 20px rgba(255,107,26,.35);
+}
+.rt-btn-main:hover{transform:scale(1.06);}
+.rt-btn-main.running{background:var(--card2);border:2px solid var(--border);color:var(--text);}
+.rt-btn-skip{background:var(--card2);border:1.5px solid var(--border);color:var(--muted);}
+.rt-btn-skip:hover{border-color:var(--green);color:var(--green);}
+.rt-btn-close{background:var(--card2);border:1.5px solid var(--border);color:var(--muted);}
+.rt-btn-close:hover{border-color:var(--red);color:var(--red);}
+
+/* Done state */
+.rt-ring-wrap.done .rt-time{color:var(--green);}
+.rt-ring-wrap.done{animation:timer-pulse .6s ease-in-out 3;}
+
+/* Floating rest button (persistent bottom bar) */
+.rest-fab {
+  position:fixed;bottom:24px;right:16px;
+  width:52px;height:52px;border-radius:50%;
+  background:var(--orange);border:none;
+  color:#fff;font-size:20px;cursor:pointer;
+  box-shadow:0 4px 16px rgba(255,107,26,.4);
+  z-index:100;display:none;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.rest-fab.show{display:flex;}
+.rest-fab:hover{transform:scale(1.1);}
+.rest-fab .fab-label{
+  position:absolute;right:58px;top:50%;transform:translateY(-50%);
+  background:var(--card);border:1px solid var(--border);
+  color:var(--text);font-size:11px;font-weight:700;
+  padding:4px 10px;border-radius:8px;white-space:nowrap;
+  font-family:'Noto Sans KR',sans-serif;
+}
+
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green);color:var(--dark);font-weight:700;font-size:12px;padding:9px 18px;border-radius:18px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:300;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ HOME PAGE ══ -->
+<div class="home-page" id="homePage">
+<div class="header">
+  <div class="header-top">
+    <div><div class="logo">🏀 <span>SF</span>GRIND</div><div class="header-date" id="headerDate"></div></div>
+    <div class="weight-wrap" id="weightWrap">
+      <div class="weight-badge" onclick="toggleWeightPopover()">
+        <span id="weightLabel">86kg 루틴</span><span style="font-size:10px;opacity:.8">✏️</span>
+      </div>
+      <div class="weight-popover" id="weightPopover">
+        <label>체중 (kg)</label>
+        <input type="number" id="weightInput" min="30" max="300" step="0.1" placeholder="86"
+          oninput="updateWeightLabel(this.value)" onchange="saveWeight(this.value)"
+          onkeydown="if(event.key==='Enter')closeWeightPopover()"/>
+        <div class="wpop-hint">Enter 또는 바깥 클릭</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="week-nav">
+  <button class="week-nav-btn" onclick="shiftWeek(-1)">‹</button>
+  <div class="week-nav-center">
+    <div class="week-nav-label" id="weekNavLabel"></div>
+    <div class="week-nav-sub" id="weekNavSub"></div>
+    <div class="week-nav-today" id="weekNavToday" onclick="goToThisWeek()" style="display:none">오늘로 돌아가기</div>
+  </div>
+  <button class="week-nav-btn" onclick="shiftWeek(1)">›</button>
+</div>
+<div class="year-toggle">
+  <button class="year-toggle-btn" id="yearToggleBtn" onclick="toggleYearView()">📅 연도별 보기</button>
+</div>
+<div class="year-view" id="yearView">
+  <div class="year-header">
+    <button class="year-arrow" onclick="shiftYear(-1)">‹</button>
+    <div class="year-label" id="yearViewLabel"></div>
+    <button class="year-arrow" onclick="shiftYear(1)">›</button>
+  </div>
+  <div class="year-months" id="yearMonths"></div>
+</div>
+<div class="summary-card">
+  <div class="summary-title" id="summaryTitle">📅 이번 주 진행률</div>
+  <div class="summary-grid" id="summaryGrid"></div>
+</div>
+<!-- ══ WORKOUT START CARD ══ -->
+<div class="start-card" id="startCard">
+  <div class="sc-top">
+    <span class="sc-badge">TODAY</span>
+    <span class="sc-date" id="scDate"></span>
+  </div>
+  <div class="sc-title" id="scTitle">오늘 루틴</div>
+  <div class="sc-sub" id="scSub">시작 버튼을 누르면 타이머가 켜져요</div>
+  <div class="sc-stats" id="scStats"></div>
+  <button class="sc-btn" id="scBtn" onclick="startSessionFromCard()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+    운동 시작하기
+  </button>
+  <div class="sc-skip" onclick="skipStartCard()">나중에 시작할게요</div>
+</div>
+
+<!-- Session Timer Bar (shown after start) -->
+<div class="session-bar" id="sessionBar" style="display:none">
+  <div class="session-left">
+    <div class="session-lbl">⏱ 운동 중</div>
+    <div class="session-time-display running" id="sessionDisplay">00:00</div>
+  </div>
+  <div class="session-btns">
+    <button class="session-btn stop" id="sessionStopBtn" onclick="stopSession()">종료</button>
+    <button class="session-btn edit" id="sessionEditBtn" onclick="openSessionEdit()" title="수정">✏️</button>
+  </div>
+  <div class="session-kcal">
+    <strong id="kcalVal">—</strong>
+    <span style="font-size:9px">kcal</span>
+  </div>
+</div>
+
+<!-- Session Done Bar (shown after stop) -->
+<div class="session-bar" id="sessionDoneBar" style="display:none">
+  <div class="session-left">
+    <div class="session-lbl">✅ 완료</div>
+    <div class="session-time-display" id="sessionDoneDisplay" style="color:var(--green)">00:00</div>
+  </div>
+  <div class="session-btns">
+    <button class="session-btn edit" onclick="openSessionEdit()" title="수정">✏️</button>
+    <button class="session-btn reset" onclick="resetSession()" title="리셋">🗑</button>
+  </div>
+  <div class="session-kcal">
+    <strong id="kcalDoneVal" style="color:var(--yellow)">—</strong>
+    <span style="font-size:9px">kcal</span>
+  </div>
+</div>
+
+<!-- Session Edit Modal -->
+<div class="se-overlay" id="seOverlay" onclick="closeSessionEdit(event)">
+  <div class="se-card" id="seCard">
+    <div class="se-title">⏱ 운동 시간 수정</div>
+    <div class="se-sub">실제로 운동한 시간을 직접 입력해주세요</div>
+    <div class="se-fields">
+      <div class="se-field">
+        <label>시간</label>
+        <input class="se-input" type="number" id="seHours" min="0" max="23" placeholder="0"/>
+        <span class="se-unit">시간</span>
+      </div>
+      <div class="se-field">
+        <label>분</label>
+        <input class="se-input" type="number" id="seMins" min="0" max="59" placeholder="0"/>
+        <span class="se-unit">분</span>
+      </div>
+    </div>
+    <div class="se-btns">
+      <button class="se-btn se-btn-cancel" onclick="closeSessionEditDirect()">취소</button>
+      <button class="se-btn se-btn-save" onclick="saveSessionEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reorder bar -->
+<div class="reorder-bar" id="reorderBar">
+  <div class="reorder-bar-label">✦ 순서 변경 모드 — ↑↓ 버튼으로 이동</div>
+  <button class="reorder-bar-done" onclick="exitReorderMode()">완료</button>
+</div>
+
+<!-- Superset bar -->
+<div class="superset-bar" id="supersetBar">
+  <div class="superset-bar-label" id="supersetBarLabel">운동을 두 개 선택해서<br>슈퍼세트로 묶어요</div>
+  <button class="superset-bar-done" onclick="exitSupersetMode()">취소</button>
+</div>
+
+<div class="day-tabs" id="dayTabs"></div>
+<div id="dayContent"></div>
+</div><!-- /home-page -->
+
+<!-- ══ STATS PAGE ══ -->
+<div class="stats-page" id="statsPage">
+  <div class="stats-header">
+    <div class="stats-title">📊 성장 기록</div>
+    <div class="stats-sub">최근 12주 데이터 기준</div>
+  </div>
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-card-val" id="scTotalWeeks">—</div>
+      <div class="stat-card-lbl">운동한 주</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-val" id="scTotalSessions">—</div>
+      <div class="stat-card-lbl">총 세션</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-val" id="scConsistency">—</div>
+      <div class="stat-card-lbl">완료율</div>
+    </div>
+  </div>
+  <div class="stats-section">
+    <div class="stats-section-title">🔥 12주 완료 히트맵</div>
+    <div class="heatmap-label-row">
+      <div class="heatmap-day-label">월</div><div class="heatmap-day-label">화</div>
+      <div class="heatmap-day-label">수</div><div class="heatmap-day-label">목</div>
+      <div class="heatmap-day-label">금</div><div class="heatmap-day-label">토</div>
+      <div class="heatmap-day-label">일</div>
+    </div>
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+    <div class="heatmap-legend">
+      <span>없음</span>
+      <div class="heatmap-legend-cell" style="background:rgba(255,107,26,.25)"></div>
+      <div class="heatmap-legend-cell" style="background:rgba(255,107,26,.55)"></div>
+      <div class="heatmap-legend-cell" style="background:rgba(255,107,26,.85)"></div>
+      <div class="heatmap-legend-cell" style="background:var(--green);opacity:.85"></div>
+      <span>완료</span>
+    </div>
+  </div>
+  <div class="stats-section">
+    <div class="stats-section-title">💪 주간 볼륨 <span>(세트×횟수×중량 합계)</span></div>
+    <div class="chart-wrap"><canvas id="volumeChart"></canvas></div>
+  </div>
+  <div class="stats-section">
+    <div class="stats-section-title">⚖️ 중량 성장 추이</div>
+    <div class="ex-pills" id="exPills"></div>
+    <div class="chart-wrap"><canvas id="weightChart"></canvas></div>
+  </div>
+  <div class="stats-section">
+    <div class="stats-section-title">🏆 추정 1RM & 개인 최고 <span>(Epley 공식)</span></div>
+    <div id="prList"></div>
+  </div>
+
+  <!-- 추정 1RM 성장 추이 -->
+  <div class="stats-section">
+    <div class="stats-section-title">📈 추정 1RM 성장 추이</div>
+    <div class="ex-pills" id="exPills1rm"></div>
+    <div class="chart-wrap"><canvas id="rm1Chart"></canvas></div>
+  </div>
+
+  <!-- 운동 시간 & 칼로리 -->
+  <div class="stat-cards-2" id="timeKcalCards">
+    <div class="stat-card-wide">
+      <div class="stat-card-wide-icon">⏱</div>
+      <div class="stat-card-wide-body">
+        <div class="stat-card-wide-val" id="scTotalTime">— <span>분</span></div>
+        <div class="stat-card-wide-lbl">12주 총 운동 시간</div>
+      </div>
+    </div>
+    <div class="stat-card-wide">
+      <div class="stat-card-wide-icon">🔥</div>
+      <div class="stat-card-wide-body">
+        <div class="stat-card-wide-val" id="scTotalKcal">— <span>kcal</span></div>
+        <div class="stat-card-wide-lbl">12주 총 추정 소모</div>
+      </div>
+    </div>
+  </div>
+  <div class="stats-section">
+    <div class="stats-section-title">⏱ 주간 운동 시간 <span>(분)</span></div>
+    <div class="chart-wrap"><canvas id="timeChart"></canvas></div>
+  </div>
+  <div class="stats-section">
+    <div class="stats-section-title">🔥 주간 추정 칼로리 소모</div>
+    <div class="chart-wrap"><canvas id="kcalChart"></canvas></div>
+  </div>
+</div><!-- /stats-page -->
+
+</div><!-- /app -->
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navHome" onclick="switchPage('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>홈</span>
+  </button>
+  <button class="nav-btn" id="navStats" onclick="switchPage('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>분석</span>
+  </button>
+</nav>
+
+<!-- Weight confirm modal -->
+<div class="wc-overlay" id="wcOverlay">
+  <div class="wc-card">
+    <div class="wc-icon">⚖️</div>
+    <div class="wc-title">오늘 체중 확인</div>
+    <div class="wc-sub">칼로리 계산에 사용됩니다.<br>현재 설정된 체중이 맞나요?</div>
+    <div class="wc-current"><span id="wcCurrent">86</span><span>kg</span></div>
+    <div class="wc-input-row">
+      <input class="wc-input" type="number" id="wcInput" min="30" max="300" step="0.1" placeholder="새 체중"/>
+    </div>
+    <div class="wc-btns">
+      <button class="wc-btn wc-btn-yes" onclick="confirmWeight(false)">맞아요 ✓</button>
+      <button class="wc-btn wc-btn-update" onclick="confirmWeight(true)">업데이트</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Exercise Modal -->
+<div class="addex-overlay" id="addexOverlay" onclick="closeAddEx(event)">
+  <div class="addex-sheet" id="addexSheet">
+    <div class="addex-drag"></div>
+    <div class="addex-title" id="addexTitle">운동 추가</div>
+    <div class="addex-sub" id="addexSubtitle">오늘 루틴에 운동을 추가해요</div>
+
+    <!-- Step 1: 운동 타입 선택 -->
+    <div id="addexStep1">
+      <div class="addex-section-lbl">운동 종류</div>
+      <div class="addex-types" style="margin-top:8px">
+        <button class="addex-type selected" data-type="weight" onclick="selectAddExType('weight')">
+          <span class="addex-type-icon">🏋️</span>웨이트
+        </button>
+        <button class="addex-type" data-type="treadmill" onclick="selectAddExType('treadmill')">
+          <span class="addex-type-icon">🏃</span>트레드밀
+        </button>
+        <button class="addex-type" data-type="cycle" onclick="selectAddExType('cycle')">
+          <span class="addex-type-icon">🚴</span>싸이클
+        </button>
+        <button class="addex-type" data-type="stairmaster" onclick="selectAddExType('stairmaster')">
+          <span class="addex-type-icon">🪜</span>스테퍼
+        </button>
+        <button class="addex-type" data-type="outdoor" onclick="selectAddExType('outdoor')">
+          <span class="addex-type-icon">🌿</span>야외러닝
+        </button>
+        <button class="addex-type" data-type="swim" onclick="selectAddExType('swim')">
+          <span class="addex-type-icon">🏊</span>수영
+        </button>
+        <button class="addex-type" data-type="basketball" onclick="selectAddExType('basketball')">
+          <span class="addex-type-icon">🏀</span>농구
+        </button>
+        <button class="addex-type" data-type="stretch" onclick="selectAddExType('stretch')">
+          <span class="addex-type-icon">🧘</span>스트레칭
+        </button>
+        <button class="addex-type" data-type="custom" onclick="selectAddExType('custom')">
+          <span class="addex-type-icon">✏️</span>직접입력
+        </button>
+      </div>
+    </div>
+
+    <!-- Dynamic fields by type -->
+    <div id="addexFields" style="margin-top:12px"></div>
+
+    <!-- Section picker (hidden in edit mode) -->
+    <div style="margin-top:10px" id="addexSectionWrap">
+      <div class="addex-section-lbl">추가할 섹션</div>
+      <div class="addex-sections" id="addexSections" style="margin-top:6px"></div>
+    </div>
+
+    <button class="addex-add-btn" id="addexConfirmBtn" onclick="confirmAddEx()">추가하기</button>
+  </div>
+</div>
+
+<!-- Exercise detail modal -->
+<div class="thumb-modal" id="thumbModal" onclick="closeThumbModal(event)">
+  <div class="thumb-sheet" id="thumbSheet">
+    <div class="thumb-drag"></div>
+    <div class="thumb-modal-name" id="thumbModalName"></div>
+    <div class="thumb-modal-svg-wrap" id="thumbModalSvg"></div>
+    <ul class="thumb-modal-tips" id="thumbModalTips"></ul>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Rest Timer Sheet -->
+<div class="rest-timer-overlay" id="restOverlay" onclick="handleRestOverlayClick(event)">
+  <div class="rest-timer-sheet" id="restSheet">
+    <div class="rt-drag"></div>
+    <div class="rt-label">⏱ 휴식 타이머</div>
+
+    <!-- Ring -->
+    <div class="rt-ring-wrap" id="rtRingWrap">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle class="rt-bg-circle" cx="100" cy="100" r="86"/>
+        <circle class="rt-progress-circle" id="rtArc" cx="100" cy="100" r="86"
+          stroke-dasharray="540" stroke-dashoffset="0"/>
+      </svg>
+      <div class="rt-center">
+        <div class="rt-time" id="rtTime">1:30</div>
+        <div class="rt-time-sub" id="rtSub">휴식 중</div>
+      </div>
+    </div>
+
+    <!-- Preset -->
+    <div class="rt-presets">
+      <button class="rt-preset" onclick="setPreset(60)">1분</button>
+      <button class="rt-preset active" onclick="setPreset(90)">1분 30초</button>
+      <button class="rt-preset" onclick="setPreset(120)">2분</button>
+      <button class="rt-preset" onclick="setPreset(180)">3분</button>
+      <button class="rt-preset" onclick="setPreset(300)">5분</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="rt-controls">
+      <button class="rt-btn rt-btn-close" onclick="closeRestTimer()" title="닫기">✕</button>
+      <button class="rt-btn rt-btn-main" id="rtPlayBtn" onclick="toggleRestTimer()">▶</button>
+      <button class="rt-btn rt-btn-skip" onclick="skipRest()" title="스킵">⏭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating rest button -->
+<button class="rest-fab" id="restFab" onclick="openRestTimer()">
+  <span>⏱</span>
+  <span class="fab-label" id="fabLabel">휴식</span>
+</button>
+
+<script>
+// ═══ SVG ANIMATIONS ════════════════════════════════════════════════════
+// Each exercise gets an animated SVG that fits in a 54×54 thumbnail
+// Uses CSS keyframes defined above; figures are light-blue stick figures
+// with orange joints and blue-grey equipment
+
+const C = {
+  body: '#B8D4EC',   // figure body
+  joint: '#FF6B1A',  // joints / highlight
+  equip: '#5B6EAD',  // equipment (bar, bench, machine)
+  plate: '#7B8CDE',  // weight plates
+  line: '#8AAFCC',   // secondary lines
+  teal: '#2DD4BF',   // muscle highlight
+};
+
+// Returns inline SVG string — small (54×54 viewBox) animated figure
+const SVGS = {
+
+  // ── 벤치 프레스
+  m2: {
+    tips: ['등 아랫부분 아치 + 엉덩이 고정','바를 가슴 하단으로 내리기','호흡: 내릴 때 들이쉬고 밀 때 내쉬기','그립은 어깨 너비보다 살짝 넓게'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- bench -->
+      <rect x="6" y="33" width="42" height="5" rx="2" fill="${C.equip}" opacity=".7"/>
+      <rect x="9" y="38" width="4" height="10" rx="1.5" fill="${C.equip}" opacity=".5"/>
+      <rect x="41" y="38" width="4" height="10" rx="1.5" fill="${C.equip}" opacity=".5"/>
+      <!-- barbell -->
+      <g style="animation:bench-down 1.4s ease-in-out infinite">
+        <rect x="3" y="17" width="48" height="4" rx="2" fill="${C.equip}"/>
+        <rect x="1" y="14" width="7" height="10" rx="2" fill="${C.plate}"/>
+        <rect x="46" y="14" width="7" height="10" rx="2" fill="${C.plate}"/>
+      </g>
+      <!-- torso (lying) -->
+      <rect x="14" y="24" width="24" height="10" rx="4" fill="${C.body}" opacity=".9"/>
+      <!-- head -->
+      <circle cx="41" cy="28" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <!-- arms -->
+      <g style="animation:bench-arms 1.4s ease-in-out infinite; transform-origin:22px 25px">
+        <line x1="20" y1="25" x2="12" y2="18" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="12" cy="18" r="2.2" fill="${C.joint}"/>
+      </g>
+      <g style="animation:bench-arms 1.4s ease-in-out infinite; transform-origin:30px 25px; animation-direction:reverse">
+        <line x1="32" y1="25" x2="40" y2="18" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="40" cy="18" r="2.2" fill="${C.joint}"/>
+      </g>
+      <!-- legs -->
+      <line x1="20" y1="34" x2="16" y2="48" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="28" y1="34" x2="32" y2="48" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="16" cy="48" r="2.5" fill="${C.equip}" opacity=".5"/>
+      <circle cx="32" cy="48" r="2.5" fill="${C.equip}" opacity=".5"/>
+    </svg>`
+  },
+
+  // ── 풀업
+  m3: {
+    tips: ['그립은 어깨 너비보다 넓게','복근 긴장 유지 — 허리 스윙 금지','턱이 바 위로 완전히 올라올 때까지','내려올 때 천천히 버티기 (네거티브)'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- pull-up bar -->
+      <rect x="6" y="7" width="42" height="4" rx="2" fill="${C.equip}"/>
+      <rect x="6" y="3" width="4" height="8" rx="1.5" fill="${C.equip}" opacity=".5"/>
+      <rect x="44" y="3" width="4" height="8" rx="1.5" fill="${C.equip}" opacity=".5"/>
+      <!-- body group animates up/down -->
+      <g style="animation:pullup-body 1.5s ease-in-out infinite">
+        <!-- hands -->
+        <circle cx="16" cy="12" r="2.5" fill="${C.joint}"/>
+        <circle cx="38" cy="12" r="2.5" fill="${C.joint}"/>
+        <!-- arms -->
+        <g style="animation:pullup-arms 1.5s ease-in-out infinite; transform-origin:16px 20px">
+          <line x1="16" y1="12" x2="20" y2="22" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        </g>
+        <g style="animation:pullup-arms 1.5s ease-in-out infinite; transform-origin:38px 20px; animation-direction:reverse">
+          <line x1="38" y1="12" x2="34" y2="22" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        </g>
+        <!-- head -->
+        <circle cx="27" cy="20" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+        <!-- torso -->
+        <line x1="27" y1="25" x2="27" y2="39" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <!-- legs -->
+        <line x1="27" y1="39" x2="22" y2="52" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        <line x1="27" y1="39" x2="32" y2="52" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        <circle cx="22" cy="52" r="2" fill="${C.equip}" opacity=".4"/>
+        <circle cx="32" cy="52" r="2" fill="${C.equip}" opacity=".4"/>
+        <!-- shoulder joints -->
+        <circle cx="20" cy="22" r="2" fill="${C.joint}"/>
+        <circle cx="34" cy="22" r="2" fill="${C.joint}"/>
+      </g>
+    </svg>`
+  },
+
+  // ── 오버헤드 프레스
+  m4: {
+    tips: ['발은 어깨 너비, 코어 꽉 잠그기','머리를 살짝 뒤로 피해 직선으로 밀기','팔꿈치 완전히 펼 때까지 밀기','내릴 때 쇄골 높이까지만'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- barbell -->
+      <g style="animation:ohp-bar 1.4s ease-in-out infinite">
+        <rect x="4" y="10" width="46" height="4" rx="2" fill="${C.equip}"/>
+        <rect x="2" y="7" width="7" height="10" rx="2" fill="${C.plate}"/>
+        <rect x="45" y="7" width="7" height="10" rx="2" fill="${C.plate}"/>
+      </g>
+      <!-- head -->
+      <circle cx="27" cy="22" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <!-- arms animated -->
+      <g style="animation:ohp-arms 1.4s ease-in-out infinite; transform-origin:27px 30px">
+        <line x1="18" y1="30" x2="12" y2="14" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        <line x1="36" y1="30" x2="42" y2="14" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        <circle cx="12" cy="14" r="2.2" fill="${C.joint}"/>
+        <circle cx="42" cy="14" r="2.2" fill="${C.joint}"/>
+        <circle cx="18" cy="30" r="2" fill="${C.joint}"/>
+        <circle cx="36" cy="30" r="2" fill="${C.joint}"/>
+      </g>
+      <!-- torso -->
+      <line x1="27" y1="27" x2="27" y2="41" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- hips -->
+      <circle cx="27" cy="41" r="2.5" fill="${C.joint}"/>
+      <!-- legs -->
+      <line x1="27" y1="41" x2="20" y2="53" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="27" y1="41" x2="34" y2="53" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="20" cy="52" r="2.5" fill="${C.equip}" opacity=".5"/>
+      <circle cx="34" cy="52" r="2.5" fill="${C.equip}" opacity=".5"/>
+    </svg>`
+  },
+
+  // ── 바벨 로우
+  m5: {
+    tips: ['상체 45~90도 앞으로 기울이기','바를 배꼽 쪽으로 당기기','등을 곧게 — 허리 반드시 중립','팔꿈치를 뒤로 끌어당기는 느낌'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- floor -->
+      <line x1="4" y1="50" x2="50" y2="50" stroke="${C.equip}" stroke-width="1" opacity=".4"/>
+      <!-- barbell low -->
+      <rect x="6" y="40" width="42" height="4" rx="2" fill="${C.equip}"/>
+      <rect x="4" y="37" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <rect x="43" y="37" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <!-- hands -->
+      <circle cx="16" cy="41" r="2.2" fill="${C.joint}"/>
+      <circle cx="36" cy="41" r="2.2" fill="${C.joint}"/>
+      <!-- torso hinged -->
+      <g style="animation:row-torso 1.4s ease-in-out infinite; transform-origin:27px 38px">
+        <line x1="27" y1="38" x2="27" y2="18" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="27" cy="17" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+        <!-- shoulder line -->
+        <line x1="18" y1="25" x2="36" y2="25" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      </g>
+      <!-- arms -->
+      <g style="animation:row-arms 1.4s ease-in-out infinite; transform-origin:16px 30px">
+        <line x1="16" y1="28" x2="16" y2="42" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <g style="animation:row-arms 1.4s ease-in-out infinite; transform-origin:36px 30px; animation-direction:reverse">
+        <line x1="36" y1="28" x2="36" y2="42" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <!-- legs -->
+      <circle cx="27" cy="38" r="3" fill="${C.joint}"/>
+      <line x1="24" y1="40" x2="20" y2="51" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="30" y1="40" x2="34" y2="51" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+    </svg>`
+  },
+
+  // ── 백 스쿼트
+  t1: {
+    tips: ['발은 어깨 너비, 발끝 15~30도 벌리기','무릎이 발끝 방향으로 따라가야 함','허벅지 지면 평행 이하로 내리기','코어 꽉 잠그고 가슴 세우기'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- barbell on back -->
+      <rect x="4" y="16" width="46" height="4" rx="2" fill="${C.equip}"/>
+      <rect x="2" y="13" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <rect x="45" y="13" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <!-- head -->
+      <circle cx="27" cy="13" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <!-- torso + body -->
+      <g style="animation:squat-body 1.5s ease-in-out infinite; transform-origin:27px 30px">
+        <line x1="27" y1="18" x2="27" y2="33" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- arms holding bar -->
+        <line x1="14" y1="20" x2="27" y2="20" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+        <line x1="40" y1="20" x2="27" y2="20" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+        <!-- hip -->
+        <circle cx="27" cy="33" r="3" fill="${C.joint}"/>
+        <!-- thighs -->
+        <g style="animation:squat-legs 1.5s ease-in-out infinite; transform-origin:27px 33px">
+          <line x1="27" y1="33" x2="16" y2="44" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="27" y1="33" x2="38" y2="44" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="16" cy="44" r="2.5" fill="${C.joint}"/>
+          <circle cx="38" cy="44" r="2.5" fill="${C.joint}"/>
+          <!-- shins -->
+          <line x1="16" y1="44" x2="13" y2="53" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+          <line x1="38" y1="44" x2="41" y2="53" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        </g>
+      </g>
+    </svg>`
+  },
+
+  // ── 박스 점프
+  t2: {
+    tips: ['착지 시 무릎을 살짝 굽혀 충격 흡수','팔을 위로 올려 도움닫기','폭발적으로 뛰어오르기','발목·무릎 충분히 워밍업 필수'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- box -->
+      <rect x="26" y="34" width="24" height="16" rx="3" fill="${C.equip}" opacity=".6"/>
+      <rect x="26" y="30" width="24" height="6" rx="2" fill="${C.equip}" opacity=".8"/>
+      <!-- figure in air -->
+      <g style="animation:jump-body 1.6s ease-in-out infinite">
+        <circle cx="18" cy="12" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+        <line x1="18" y1="17" x2="18" y2="30" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- arms up for momentum -->
+        <line x1="12" y1="22" x2="6" y2="13" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        <line x1="24" y1="22" x2="30" y2="13" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+        <circle cx="6" cy="13" r="2" fill="${C.joint}"/>
+        <circle cx="30" cy="13" r="2" fill="${C.joint}"/>
+        <!-- legs tucked -->
+        <line x1="16" y1="30" x2="10" y2="38" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="20" y1="30" x2="26" y2="38" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="10" cy="38" r="2.2" fill="${C.joint}"/>
+        <circle cx="26" cy="38" r="2.2" fill="${C.joint}"/>
+        <line x1="10" y1="38" x2="6" y2="30" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="26" y1="38" x2="30" y2="30" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <!-- jump arc arrow -->
+      <path d="M16,44 Q14,28 30,30" stroke="${C.joint}" stroke-width="1.2" fill="none" stroke-dasharray="2,2" opacity=".5"/>
+    </svg>`
+  },
+
+  // ── 레그 프레스
+  t3: {
+    tips: ['등과 엉덩이를 시트에 밀착','발 위치: 발판 중간~위쪽','무릎이 발끝 넘지 않도록','끝까지 펴지 말고 살짝 굽힌 채 유지'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- machine seat back -->
+      <rect x="4" y="18" width="5" height="28" rx="2" fill="${C.equip}" opacity=".6"/>
+      <rect x="4" y="32" width="22" height="5" rx="2" fill="${C.equip}" opacity=".6"/>
+      <!-- footplate -->
+      <rect x="38" y="16" width="5" height="24" rx="2" fill="${C.equip}" opacity=".8"/>
+      <!-- seated figure -->
+      <circle cx="12" cy="16" r="4.5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <line x1="12" y1="20" x2="12" y2="33" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- thighs toward plate -->
+      <g style="animation:lp-legs 1.4s ease-in-out infinite; transform-origin:12px 33px">
+        <line x1="12" y1="33" x2="32" y2="24" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="12" y1="33" x2="32" y2="32" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="32" cy="24" r="2.5" fill="${C.joint}"/>
+        <circle cx="32" cy="32" r="2.5" fill="${C.joint}"/>
+        <!-- shins to plate -->
+        <line x1="32" y1="24" x2="38" y2="20" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="32" y1="32" x2="38" y2="36" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    </svg>`
+  },
+
+  // ── 카프 레이즈
+  t5: {
+    tips: ['발끝으로 최대한 높이 들어올리기','정점에서 1~2초 수축 유지','천천히 내리기 (네거티브 중요)','발 넓이: 어깨 너비'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- floor -->
+      <rect x="8" y="47" width="38" height="4" rx="2" fill="${C.equip}" opacity=".4"/>
+      <!-- standing figure -->
+      <circle cx="27" cy="8" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <line x1="27" y1="13" x2="27" y2="32" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="16" y1="19" x2="38" y2="19" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <line x1="16" y1="19" x2="13" y2="33" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+      <line x1="38" y1="19" x2="41" y2="33" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+      <circle cx="27" cy="32" r="2.5" fill="${C.joint}"/>
+      <!-- thighs -->
+      <line x1="24" y1="32" x2="20" y2="44" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="30" y1="32" x2="34" y2="44" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="20" cy="44" r="2.2" fill="${C.joint}"/>
+      <circle cx="34" cy="44" r="2.2" fill="${C.joint}"/>
+      <!-- heels animate up -->
+      <g style="animation:calf-heel 1.2s ease-in-out infinite; transform-origin:27px 47px">
+        <line x1="20" y1="44" x2="18" y2="47" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="34" y1="44" x2="36" y2="47" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <!-- tiptoe highlight -->
+        <ellipse cx="18" cy="47" rx="3.5" ry="2" fill="${C.joint}" opacity=".8"/>
+        <ellipse cx="36" cy="47" rx="3.5" ry="2" fill="${C.joint}" opacity=".8"/>
+      </g>
+    </svg>`
+  },
+
+  // ── 랫풀다운
+  th1: {
+    tips: ['그립은 어깨보다 넓게 (1.5배)','가슴을 위로 열고 살짝 뒤로 기울기','바를 쇄골로 당기기 (턱 아래 X)','날개뼈를 아래로 모으는 느낌'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- cable from top -->
+      <line x1="27" y1="0" x2="27" y2="10" stroke="${C.equip}" stroke-width="1.5" stroke-dasharray="2,2" opacity=".5"/>
+      <!-- lat bar -->
+      <path d="M6,12 L14,18 L40,18 L48,12" stroke="${C.equip}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- hands -->
+      <circle cx="14" cy="18" r="2.5" fill="${C.joint}"/>
+      <circle cx="40" cy="18" r="2.5" fill="${C.joint}"/>
+      <!-- arms animated -->
+      <g style="animation:lat-arms 1.5s ease-in-out infinite; transform-origin:27px 28px">
+        <line x1="14" y1="18" x2="19" y2="28" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="40" y1="18" x2="35" y2="28" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="19" cy="28" r="2.2" fill="${C.joint}"/>
+        <circle cx="35" cy="28" r="2.2" fill="${C.joint}"/>
+      </g>
+      <!-- head (slightly back) -->
+      <circle cx="27" cy="22" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <!-- torso -->
+      <line x1="27" y1="27" x2="27" y2="40" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- seat -->
+      <rect x="16" y="40" width="22" height="4" rx="2" fill="${C.equip}" opacity=".5"/>
+      <rect x="22" y="44" width="10" height="8" rx="2" fill="${C.equip}" opacity=".35"/>
+      <!-- legs -->
+      <line x1="22" y1="40" x2="14" y2="52" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="32" y1="40" x2="40" y2="52" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+    </svg>`
+  },
+
+  // ── 덤벨 숄더 프레스
+  th2: {
+    tips: ['덤벨은 귀 옆, 팔꿈치 90도로 시작','코어 꽉 잠그고 허리 세우기','팔을 완전히 펴되 잠그지 않기','천천히 내리며 어깨 자극 느끼기'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- dumbbells animated upward -->
+      <g style="animation:shp-arms 1.4s ease-in-out infinite; transform-origin:27px 24px">
+        <!-- left dumbbell -->
+        <rect x="3" y="10" width="10" height="4" rx="2" fill="${C.equip}"/>
+        <rect x="1" y="7" width="4" height="10" rx="1.5" fill="${C.plate}"/>
+        <rect x="9" y="7" width="4" height="10" rx="1.5" fill="${C.plate}"/>
+        <!-- right dumbbell -->
+        <rect x="41" y="10" width="10" height="4" rx="2" fill="${C.equip}"/>
+        <rect x="39" y="7" width="4" height="10" rx="1.5" fill="${C.plate}"/>
+        <rect x="47" y="7" width="4" height="10" rx="1.5" fill="${C.plate}"/>
+        <!-- hands -->
+        <circle cx="13" cy="12" r="2.2" fill="${C.joint}"/>
+        <circle cx="41" cy="12" r="2.2" fill="${C.joint}"/>
+        <!-- arms -->
+        <line x1="13" y1="13" x2="18" y2="24" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="41" y1="13" x2="36" y2="24" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="18" cy="24" r="2.2" fill="${C.joint}"/>
+        <circle cx="36" cy="24" r="2.2" fill="${C.joint}"/>
+      </g>
+      <!-- head -->
+      <circle cx="27" cy="21" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <!-- torso -->
+      <line x1="27" y1="26" x2="27" y2="39" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- seat -->
+      <rect x="17" y="39" width="20" height="4" rx="2" fill="${C.equip}" opacity=".5"/>
+      <!-- legs -->
+      <line x1="22" y1="39" x2="15" y2="51" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="32" y1="39" x2="39" y2="51" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+    </svg>`
+  },
+
+  // ── 바벨 컬
+  th3: {
+    tips: ['컬: 팔꿈치 고정, 위팔만 움직이기','컬: 정점에서 이두 쥐어짜기','푸쉬다운: 팔꿈치 몸통 옆에 고정','푸쉬다운: 손목 꺾지 않기'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- floor -->
+      <line x1="4" y1="52" x2="50" y2="52" stroke="${C.equip}" stroke-width="1" opacity=".3"/>
+      <!-- barbell -->
+      <rect x="8" y="34" width="38" height="4" rx="2" fill="${C.equip}"/>
+      <rect x="5" y="31" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <rect x="42" y="31" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <!-- figure -->
+      <circle cx="27" cy="11" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <line x1="27" y1="16" x2="27" y2="34" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="16" y1="22" x2="38" y2="22" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <!-- upper arms (fixed elbows) -->
+      <line x1="16" y1="22" x2="14" y2="34" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="38" y1="22" x2="40" y2="34" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="14" cy="34" r="2.2" fill="${C.joint}"/>
+      <circle cx="40" cy="34" r="2.2" fill="${C.joint}"/>
+      <!-- forearms animated -->
+      <g style="animation:curl-fore 1.4s ease-in-out infinite; transform-origin:14px 34px">
+        <line x1="14" y1="34" x2="10" y2="36" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="10" cy="36" r="2" fill="${C.joint}"/>
+      </g>
+      <g style="animation:curl-fore 1.4s ease-in-out infinite; transform-origin:40px 34px; animation-direction:reverse">
+        <line x1="40" y1="34" x2="44" y2="36" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="44" cy="36" r="2" fill="${C.joint}"/>
+      </g>
+      <!-- legs -->
+      <line x1="24" y1="34" x2="20" y2="51" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="30" y1="34" x2="34" y2="51" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+    </svg>`
+  },
+
+  // ── 루마니안 데드리프트
+  f1: {
+    tips: ['바를 허벅지에 붙여서 슬라이드','등은 항상 일자 (절대 굽히지 않기)','햄스트링 당기는 느낌 올 때까지','무릎은 살짝만 굽힌 채 유지'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- floor -->
+      <line x1="4" y1="51" x2="50" y2="51" stroke="${C.equip}" stroke-width="1" opacity=".3"/>
+      <!-- barbell low -->
+      <rect x="6" y="42" width="42" height="4" rx="2" fill="${C.equip}"/>
+      <rect x="4" y="39" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <rect x="43" y="39" width="7" height="10" rx="2" fill="${C.plate}"/>
+      <!-- hands on bar -->
+      <circle cx="16" cy="43" r="2.2" fill="${C.joint}"/>
+      <circle cx="36" cy="43" r="2.2" fill="${C.joint}"/>
+      <!-- torso hinged forward -->
+      <g style="animation:rdl-torso 1.6s ease-in-out infinite; transform-origin:27px 38px">
+        <line x1="27" y1="38" x2="30" y2="14" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="30" cy="13" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+        <line x1="20" y1="24" x2="38" y2="22" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+        <!-- arms along legs -->
+        <line x1="20" y1="24" x2="16" y2="42" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="38" y1="22" x2="36" y2="42" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <!-- hip hinge joint -->
+      <circle cx="27" cy="38" r="3" fill="${C.joint}"/>
+      <!-- slightly bent knees/legs -->
+      <line x1="24" y1="40" x2="20" y2="51" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="30" y1="40" x2="34" y2="51" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="20" cy="47" r="2.2" fill="${C.joint}" opacity=".7"/>
+      <circle cx="34" cy="47" r="2.2" fill="${C.joint}" opacity=".7"/>
+    </svg>`
+  },
+
+  // ── 런지
+  f2: {
+    tips: ['앞 무릎이 발끝 넘지 않도록','뒷 무릎은 지면 가까이 내리기','상체는 곧게, 코어 잠금','양발 같은 보폭으로 번갈아'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- floor -->
+      <line x1="4" y1="52" x2="50" y2="52" stroke="${C.equip}" stroke-width="1" opacity=".3"/>
+      <!-- head -->
+      <circle cx="27" cy="9" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <!-- torso -->
+      <line x1="27" y1="14" x2="27" y2="30" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- arms -->
+      <line x1="18" y1="19" x2="14" y2="28" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <line x1="36" y1="19" x2="40" y2="28" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <!-- hips -->
+      <circle cx="27" cy="30" r="2.5" fill="${C.joint}"/>
+      <!-- front leg (bent 90°) -->
+      <g style="animation:lunge-front 1.4s ease-in-out infinite; transform-origin:27px 30px">
+        <line x1="27" y1="30" x2="14" y2="42" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="14" cy="42" r="2.5" fill="${C.joint}"/>
+        <line x1="14" y1="42" x2="10" y2="52" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <!-- back leg (knee toward floor) -->
+      <g style="animation:lunge-back 1.4s ease-in-out infinite; transform-origin:27px 30px">
+        <line x1="27" y1="30" x2="38" y2="40" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="38" cy="40" r="2.5" fill="${C.joint}"/>
+        <line x1="38" y1="40" x2="44" y2="52" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    </svg>`
+  },
+
+  // ── 레그 익스텐션
+  f3: {
+    tips: ['끝까지 완전히 펴서 대퇴사두 수축','내릴 때 천천히 버티기','허리가 뜨지 않도록','발끝 살짝 안쪽으로 틀면 내측광근 자극'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- machine frame -->
+      <rect x="4" y="22" width="5" height="26" rx="2" fill="${C.equip}" opacity=".5"/>
+      <rect x="4" y="30" width="20" height="5" rx="2" fill="${C.equip}" opacity=".5"/>
+      <!-- seat back -->
+      <rect x="20" y="14" width="5" height="22" rx="2" fill="${C.equip}" opacity=".5"/>
+      <rect x="20" y="30" width="18" height="5" rx="2" fill="${C.equip}" opacity=".5"/>
+      <!-- seated figure -->
+      <circle cx="31" cy="12" r="4.5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <line x1="31" y1="16" x2="31" y2="30" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="40" y2="22" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+      <!-- thighs on seat -->
+      <line x1="26" y1="30" x2="12" y2="32" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="36" y1="30" x2="48" y2="32" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- knees -->
+      <circle cx="12" cy="32" r="2.2" fill="${C.joint}"/>
+      <circle cx="48" cy="32" r="2.2" fill="${C.joint}"/>
+      <!-- shins animate to extension -->
+      <g style="animation:leg-ext 1.4s ease-in-out infinite; transform-origin:12px 32px">
+        <line x1="12" y1="32" x2="8" y2="46" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <!-- pad -->
+        <rect x="4" y="44" width="8" height="4" rx="2" fill="${C.joint}" opacity=".7"/>
+      </g>
+      <g style="animation:leg-ext 1.4s ease-in-out infinite; transform-origin:48px 32px; animation-direction:reverse">
+        <line x1="48" y1="32" x2="50" y2="46" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <rect x="46" y="44" width="8" height="4" rx="2" fill="${C.joint}" opacity=".7"/>
+      </g>
+    </svg>`
+  },
+
+  // ── 러닝 / 인터벌 (shared by all w*, sa1)
+  run: {
+    tips: ['착지는 발 중간(미드풋)으로','팔을 90도로 굽혀 리듬감 있게','코어 긴장, 상체는 살짝 앞으로','질주 시 보폭보다 케이던스 올리기'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- ground -->
+      <line x1="4" y1="50" x2="50" y2="50" stroke="${C.equip}" stroke-width="1" opacity=".3"/>
+      <!-- speed lines -->
+      <line x1="4" y1="28" x2="14" y2="28" stroke="${C.joint}" stroke-width="1.2" opacity=".3"/>
+      <line x1="4" y1="34" x2="12" y2="34" stroke="${C.joint}" stroke-width="1" opacity=".2"/>
+      <!-- running figure -->
+      <g style="animation:run-body 0.5s ease-in-out infinite">
+        <circle cx="30" cy="10" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+        <!-- torso leaning forward -->
+        <line x1="29" y1="15" x2="26" y2="30" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- front arm -->
+        <g style="animation:run-armF 0.5s ease-in-out infinite; transform-origin:28px 20px">
+          <line x1="28" y1="20" x2="18" y2="26" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+          <circle cx="18" cy="26" r="1.8" fill="${C.joint}"/>
+          <line x1="18" y1="26" x2="14" y2="20" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+        <!-- back arm -->
+        <g style="animation:run-armB 0.5s ease-in-out infinite; transform-origin:28px 20px">
+          <line x1="28" y1="20" x2="38" y2="24" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+          <circle cx="38" cy="24" r="1.8" fill="${C.joint}"/>
+          <line x1="38" y1="24" x2="42" y2="18" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+        <!-- hips -->
+        <circle cx="26" cy="30" r="2.5" fill="${C.joint}"/>
+        <!-- front leg -->
+        <g style="animation:run-legF 0.5s ease-in-out infinite; transform-origin:26px 30px">
+          <line x1="26" y1="30" x2="20" y2="42" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="20" cy="42" r="2.2" fill="${C.joint}"/>
+          <line x1="20" y1="42" x2="14" y2="50" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+          <ellipse cx="12" cy="50" rx="4" ry="2.5" fill="${C.joint}" opacity=".6"/>
+        </g>
+        <!-- back leg -->
+        <g style="animation:run-legB 0.5s ease-in-out infinite; transform-origin:26px 30px">
+          <line x1="26" y1="30" x2="34" y2="40" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="34" cy="40" r="2.2" fill="${C.joint}"/>
+          <line x1="34" y1="40" x2="42" y2="34" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        </g>
+      </g>
+    </svg>`
+  },
+
+  // ── 농구 (m1, th6)
+  ball: {
+    tips: ['시선은 림 후방에 고정 (백보드 활용)','릴리즈 포인트: 눈 위 높이','팔꿈치를 귀 옆에 정렬하기','팔로우스루: 손목을 완전히 꺾기'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- hoop -->
+      <line x1="36" y1="4" x2="36" y2="28" stroke="${C.equip}" stroke-width="2" opacity=".6"/>
+      <line x1="28" y1="4" x2="46" y2="4" stroke="${C.equip}" stroke-width="2" opacity=".5"/>
+      <ellipse cx="36" cy="18" rx="6" ry="2.5" fill="none" stroke="${C.joint}" stroke-width="2.2"/>
+      <!-- basketball arc -->
+      <g style="animation:ball-arc 1.4s ease-in-out infinite">
+        <circle cx="20" cy="14" r="5" fill="none" stroke="${C.joint}" stroke-width="2"/>
+        <path d="M16,12 Q20,8 24,12" stroke="${C.equip}" stroke-width="1" fill="none" opacity=".5"/>
+        <path d="M15,16 Q20,20 25,16" stroke="${C.equip}" stroke-width="1" fill="none" opacity=".5"/>
+        <line x1="20" y1="9" x2="20" y2="19" stroke="${C.equip}" stroke-width="1" opacity=".5"/>
+      </g>
+      <!-- shooter figure -->
+      <circle cx="14" cy="18" r="4.5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <line x1="14" y1="22" x2="14" y2="36" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- shooting arm up -->
+      <line x1="10" y1="26" x2="6" y2="18" stroke="${C.body}" stroke-width="2.8" stroke-linecap="round"/>
+      <circle cx="6" cy="18" r="2" fill="${C.joint}"/>
+      <line x1="6" y1="16" x2="18" y2="10" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- guide arm -->
+      <line x1="18" y1="26" x2="22" y2="20" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <!-- legs slight bend -->
+      <circle cx="14" cy="36" r="2.5" fill="${C.joint}"/>
+      <line x1="12" y1="36" x2="8" y2="48" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="16" y1="36" x2="20" y2="48" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="8" cy="46" r="2" fill="${C.joint}" opacity=".6"/>
+      <circle cx="20" cy="46" r="2" fill="${C.joint}" opacity=".6"/>
+      <line x1="8" y1="48" x2="6" y2="53" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="20" y1="48" x2="22" y2="53" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+    </svg>`
+  },
+
+  // ── 플랭크 / 코어 (th5)
+  plank: {
+    tips: ['몸이 일자가 되도록 유지','엉덩이 올리거나 내리지 않기','레그레이즈: 허리 바닥에 밀착','두 운동 모두 복근 내내 수축'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- floor -->
+      <line x1="4" y1="42" x2="50" y2="42" stroke="${C.equip}" stroke-width="1" opacity=".3"/>
+      <!-- plank figure -->
+      <g style="animation:plank-body 2s ease-in-out infinite">
+        <!-- body horizontal -->
+        <circle cx="42" cy="26" r="4.5" fill="none" stroke="${C.body}" stroke-width="2"/>
+        <!-- torso line -->
+        <line x1="38" y1="28" x2="12" y2="36" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- elbows on ground -->
+        <circle cx="34" cy="32" r="2.2" fill="${C.joint}"/>
+        <line x1="34" y1="32" x2="30" y2="40" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="34" y1="32" x2="38" y2="40" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="30" cy="41" rx="3" ry="2" fill="${C.equip}" opacity=".4"/>
+        <ellipse cx="38" cy="41" rx="3" ry="2" fill="${C.equip}" opacity=".4"/>
+        <!-- toes -->
+        <ellipse cx="12" cy="38" rx="4" ry="2.5" fill="${C.joint}" opacity=".5"/>
+        <!-- straight body indicator -->
+        <line x1="12" y1="36" x2="38" y2="28" stroke="${C.joint}" stroke-width="1" stroke-dasharray="2,2" opacity=".3"/>
+      </g>
+    </svg>`
+  },
+
+  // ── 셋 포인트 홀드 (m6, th4)
+  setpoint: {
+    tips: ['공을 눈 위 높이로 들기','팔꿈치를 림 방향으로 정렬','10초간 자세 고정, 흔들림 없이','슈팅 전 루틴으로 매번 체크'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- basketball at set point -->
+      <g style="animation:setpt-ball 1.8s ease-in-out infinite">
+        <circle cx="28" cy="10" r="6" fill="none" stroke="${C.joint}" stroke-width="2"/>
+        <circle cx="28" cy="10" r="6" fill="${C.joint}" opacity=".12"/>
+        <path d="M23,8 Q28,4 33,8" stroke="${C.equip}" stroke-width="1" fill="none" opacity=".5"/>
+        <path d="M22,12 Q28,16 34,12" stroke="${C.equip}" stroke-width="1" fill="none" opacity=".5"/>
+        <line x1="28" y1="4" x2="28" y2="16" stroke="${C.equip}" stroke-width="1" opacity=".5"/>
+      </g>
+      <!-- eye-level indicator -->
+      <line x1="8" y1="20" x2="20" y2="20" stroke="${C.joint}" stroke-width="1" stroke-dasharray="2,2" opacity=".4"/>
+      <!-- figure -->
+      <circle cx="27" cy="24" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <!-- shooting arm raised -->
+      <line x1="22" y1="28" x2="16" y2="20" stroke="${C.body}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="16" cy="20" r="2.2" fill="${C.joint}"/>
+      <line x1="16" y1="18" x2="26" y2="12" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- guide hand -->
+      <line x1="32" y1="28" x2="36" y2="22" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <!-- torso -->
+      <line x1="27" y1="29" x2="27" y2="40" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="27" cy="40" r="2.5" fill="${C.joint}"/>
+      <!-- legs -->
+      <line x1="24" y1="40" x2="19" y2="52" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="30" y1="40" x2="35" y2="52" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="19" cy="49" r="2" fill="${C.joint}" opacity=".6"/>
+      <circle cx="35" cy="49" r="2" fill="${C.joint}" opacity=".6"/>
+    </svg>`
+  },
+
+  // ── 스트레칭 (sa2)
+  stretch: {
+    tips: ['각 자세 20~30초 유지','반동 주지 말고 천천히','통증이 아닌 당기는 느낌까지만','운동 후 체온 높을 때 효과 UP'],
+    svg: `<svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
+      <!-- floor -->
+      <line x1="4" y1="52" x2="50" y2="52" stroke="${C.equip}" stroke-width="1" opacity=".3"/>
+      <!-- standing quad stretch figure -->
+      <circle cx="27" cy="9" r="5" fill="none" stroke="${C.body}" stroke-width="2"/>
+      <line x1="27" y1="14" x2="27" y2="30" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <!-- balance arm out -->
+      <line x1="20" y1="20" x2="10" y2="24" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <line x1="34" y1="20" x2="44" y2="24" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <!-- standing leg -->
+      <line x1="25" y1="30" x2="22" y2="52" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="22" cy="44" r="2.2" fill="${C.joint}" opacity=".6"/>
+      <!-- lifted leg (quad stretch) -->
+      <line x1="29" y1="30" x2="36" y2="42" stroke="${C.body}" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="36" cy="42" r="2.5" fill="${C.joint}"/>
+      <line x1="36" y1="42" x2="30" y2="28" stroke="${C.body}" stroke-width="3" stroke-linecap="round" stroke-dasharray="2,1"/>
+      <!-- hand holding foot -->
+      <circle cx="30" cy="28" r="2.2" fill="${C.joint}"/>
+      <line x1="34" y1="20" x2="30" y2="28" stroke="${C.body}" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+      <!-- stretch indicator -->
+      <path d="M36,30 Q42,36 38,42" stroke="${C.joint}" stroke-width="1.5" fill="none" opacity=".4" stroke-dasharray="2,2"/>
+    </svg>`
+  },
+};
+
+// Map item IDs to SVG keys
+// ── 운동 이름 키워드 → SVG 자동 매핑 ──────────────────────────────
+// 이름을 바꾸면 그림도 자동으로 바뀜!
+const SVG_KEYWORDS = [
+  // 순서 중요: 더 구체적인 것 먼저
+  { keys: ['벤치 프레스','bench press','벤치프레스','가슴 프레스','체스트 프레스'],  svg: 'm2' },
+  { keys: ['풀업','pull-up','pull up','친업','chin up','철봉'],                       svg: 'm3' },
+  { keys: ['오버헤드 프레스','ohp','밀리터리 프레스','숄더 프레스 바벨','바벨 프레스','shoulder press barbell'], svg: 'm4' },
+  { keys: ['바벨 로우','bent over','벤트오버','바벨로우','t-bar row'],                 svg: 'm5' },
+  { keys: ['셋 포인트','set point','setpoint','슛 자세','릴리즈'],                    svg: 'setpoint' },
+  { keys: ['스쿼트','squat','백 스쿼트','프론트 스쿼트'],                             svg: 't1' },
+  { keys: ['박스 점프','box jump','버티컬 점프','vertical jump','점프 스쿼트'],        svg: 't2' },
+  { keys: ['레그 프레스','leg press'],                                                svg: 't3' },
+  { keys: ['카프 레이즈','calf raise','종아리'],                                      svg: 't5' },
+  { keys: ['랫풀다운','lat pulldown','랫 풀다운','케이블 풀다운'],                    svg: 'th1' },
+  { keys: ['덤벨 숄더','dumbbell shoulder','덤벨 프레스','숄더 프레스'],              svg: 'th2' },
+  { keys: ['바벨 컬','barbell curl','바이셉','이두','bicep curl','케이블 푸쉬다운','tricep','삼두'], svg: 'th3' },
+  { keys: ['플랭크','plank','레그레이즈','leg raise','크런치','코어','ab','복근'],     svg: 'plank' },
+  { keys: ['루마니안','romanian','rdl','데드리프트','deadlift'],                      svg: 'f1' },
+  { keys: ['런지','lunge'],                                                           svg: 'f2' },
+  { keys: ['레그 익스텐션','leg extension','레그익스텐션'],                           svg: 'f3' },
+  { keys: ['티비알리스','tibialis','정강이','발끝 들기'],                              svg: 'run' }, // 러닝 그림으로 대체
+  { keys: ['농구','basketball','슈팅','layup','레이업'],                              svg: 'ball' },
+  { keys: ['조깅','jog','달리기','러닝','running','인터벌','sprint','전력질주','걷기','walking'], svg: 'run' },
+  { keys: ['스트레칭','stretch','유연성','쿨다운','cooldown'],                        svg: 'stretch' },
+];
+
+// 이름으로 SVG 키 찾기
+function svgKeyFromName(name) {
+  const n = name.toLowerCase().trim();
+  for (const rule of SVG_KEYWORDS) {
+    if (rule.keys.some(k => n.includes(k.toLowerCase()))) return rule.svg;
+  }
+  return null;
+}
+
+// 커스텀 이름이 있으면 그 이름으로, 없으면 기본 이름으로 SVG 결정
+function getSvgData(itemId) {
+  const dk = DAYS[activeDay];
+  const customName = S_names[dk]?.[itemId];
+  // 커스텀 이름이 있으면 그걸로 매핑 시도
+  if (customName) {
+    const key = svgKeyFromName(customName);
+    if (key) return SVGS[key];
+  }
+  // 기본 이름으로 매핑
+  const r = DEFAULT_ROUTINE[dk];
+  if (r) {
+    const item = r.sections.flatMap(s => s.items).find(i => i.id === itemId);
+    if (item) {
+      const key = svgKeyFromName(item.name);
+      if (key) return SVGS[key];
+    }
+  }
+  return null;
+}
+
+// ═══ ROUTINE ══════════════════════════════════════════════════════════
+const DAYS = ['월','화','수','목','금','토','일'];
+const DEFAULT_ROUTINE = {
+  월:{title:'[월] 농구 & 상체',subtitle:'슛 메커니즘 집중',sections:[
+    {label:'🏀 오전 농구',items:[{id:'m1',name:'농구',detail:'1시간 — 슛 연습 및 게임',tags:['ball'],noFields:true}]},
+    {label:'💪 오후 웨이트',items:[
+      {id:'m2',name:'벤치 프레스',tags:[]},
+      {id:'m3',name:'풀업',tags:[]},
+      {id:'m4',name:'오버헤드 프레스(OHP)',tags:[]},
+      {id:'m5',name:'바벨 로우',tags:[]},
+      {id:'m6',name:'셋 포인트 홀드',tags:['func'],noFields:true,detail:'10초 × 5세트'}
+    ]}
+  ]},
+  화:{title:'[화] 하체',subtitle:'폭발적 탄력 & 스트렝스',sections:[
+    {label:'🦵 하체 루틴',items:[
+      {id:'t1',name:'백 스쿼트',tags:[]},
+      {id:'t2',name:'박스 점프 / 버티컬 점프',tags:['func'],noFields:true,detail:'3세트 × 5회 (스쿼트 직후)'},
+      {id:'t3',name:'레그 프레스',tags:[]},
+      {id:'t4',name:'티비알리스 레이즈',tags:['safe'],noFields:true,detail:'3세트 × 15회'},
+      {id:'t5',name:'카프 레이즈',tags:[]}
+    ]}
+  ]},
+  수:{title:'[수] 액티브 리커버리',subtitle:'인터벌 & 심폐 강화',sections:[
+    {label:'🏃 호공 인터벌 러닝',items:[
+      {id:'w1',name:'예열 조깅',tags:['cardio'],noFields:true,detail:'5분'},
+      {id:'w2',name:'인터벌 1세트',tags:['cardio'],noFields:true,detail:'30초 전력질주 + 1분 휴식'},
+      {id:'w3',name:'인터벌 2세트',tags:['cardio'],noFields:true,detail:'30초 전력질주 + 1분 휴식'},
+      {id:'w4',name:'인터벌 3세트',tags:['cardio'],noFields:true,detail:'30초 전력질주 + 1분 휴식'},
+      {id:'w5',name:'인터벌 4세트',tags:['cardio'],noFields:true,detail:'30초 전력질주 + 1분 휴식'},
+      {id:'w6',name:'인터벌 5~8세트',tags:['cardio'],noFields:true,detail:'남은 세트 마무리'},
+      {id:'w7',name:'정리 걷기',tags:['cardio'],noFields:true,detail:'5분 쿨다운'}
+    ]}
+  ]},
+  목:{title:'[목] 상체(기능성) & 농구',subtitle:'슈팅 밸런스 유지',sections:[
+    {label:'💪 오전 웨이트',items:[
+      {id:'th1',name:'랫풀다운',tags:[]},
+      {id:'th2',name:'덤벨 숄더 프레스',tags:[]},
+      {id:'th3',name:'바벨 컬 & 케이블 푸쉬다운',tags:[]},
+      {id:'th4',name:'셋 포인트 홀드',tags:['func'],noFields:true,detail:'10초 × 5세트'},
+      {id:'th5',name:'코어 (플랭크 or 레그레이즈)',tags:[],noFields:true,detail:'3세트'}
+    ]},
+    {label:'🏀 오후 농구',items:[{id:'th6',name:'농구 실전',tags:['ball'],noFields:true,detail:'1시간~'}]}
+  ]},
+  금:{title:'[금] 하체',subtitle:'탄성 & 뒷근육',sections:[
+    {label:'🦵 하체 루틴',items:[
+      {id:'f1',name:'루마니안 데드리프트',tags:[]},
+      {id:'f2',name:'런지',tags:[]},
+      {id:'f3',name:'레그 익스텐션',tags:[]}
+    ]}
+  ]},
+  토:{title:'[토] 러닝 & 코어',subtitle:'힐링 조깅 & 리커버리',sections:[
+    {label:'🏃 호공 조깅',items:[
+      {id:'sa1',name:'가벼운 조깅',tags:['cardio'],noFields:true,detail:'20~30분'},
+      {id:'sa2',name:'전신 스트레칭',tags:['safe'],noFields:true,detail:'마무리 스트레칭'}
+    ]}
+  ]},
+  일:null
+};
+
+// ═══ STATE ════════════════════════════════════════════════════════════
+let S_check  = JSON.parse(localStorage.getItem('sfgrind_check2')  || '{}');
+let S_fields = JSON.parse(localStorage.getItem('sfgrind_fields2') || '{}');
+let S_memos  = JSON.parse(localStorage.getItem('sfgrind_memos2')  || '{}');
+let S_names  = JSON.parse(localStorage.getItem('sfgrind_names2')  || '{}');
+let S_setlog = JSON.parse(localStorage.getItem('sfgrind_setlog')  || '{}');
+let weightKg = parseFloat(localStorage.getItem('sfgrind_weight')  || '86');
+function saveAll(){
+  localStorage.setItem('sfgrind_check2',  JSON.stringify(S_check));
+  localStorage.setItem('sfgrind_fields2', JSON.stringify(S_fields));
+  localStorage.setItem('sfgrind_memos2',  JSON.stringify(S_memos));
+  localStorage.setItem('sfgrind_names2',  JSON.stringify(S_names));
+  localStorage.setItem('sfgrind_setlog',  JSON.stringify(S_setlog));
+  localStorage.setItem('sfgrind_weight',  String(weightKg));
+}
+
+// ═══ WEEK UTILS ═══════════════════════════════════════════════════════
+function getISOWeek(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);const yr=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return{year:dt.getUTCFullYear(),week:Math.ceil((((dt-yr)/86400000)+1)/7)};}
+function weekKeyFromDate(d){const{year,week}=getISOWeek(d);return`${year}-W${String(week).padStart(2,'0')}`;}
+function mondayOfWeek(wk){const[y,w]=wk.split('-W').map(Number);const jan4=new Date(Date.UTC(y,0,4));const mon=new Date(jan4);mon.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()||7)-1)+(w-1)*7);return mon;}
+function shiftWeekKey(k,d){const m=mondayOfWeek(k);m.setUTCDate(m.getUTCDate()+d*7);return weekKeyFromDate(m);}
+function formatWeekRange(wk){const m=mondayOfWeek(wk);const s=new Date(m);s.setUTCDate(m.getUTCDate()+6);return`${m.getUTCFullYear()}년 ${m.getUTCMonth()+1}/${m.getUTCDate()} ~ ${s.getUTCMonth()+1}/${s.getUTCDate()}`;}
+
+const TODAY_WEEK=weekKeyFromDate(new Date());
+let currentWeek=TODAY_WEEK;
+let activeDay=(()=>{const d=new Date().getDay();return d===0?6:d-1;})();
+let yearViewYear=new Date().getFullYear();
+let yearViewOpen=false;
+
+const getCheck=(wk,dk,id)=>!!S_check[wk]?.[dk]?.[id];
+const setCheck=(wk,dk,id,v)=>{(S_check[wk]??={})[dk]??={};S_check[wk][dk][id]=v;};
+const getFields=(wk,dk,id)=>S_fields[wk]?.[dk]?.[id]||{};
+const setFields=(wk,dk,id,o)=>{(S_fields[wk]??={})[dk]??={};S_fields[wk][dk][id]={...(S_fields[wk][dk][id]||{}),...o};};
+const getMemo=(wk,dk)=>S_memos[wk]?.[dk]||'';
+const setMemo=(wk,dk,v)=>{(S_memos[wk]??={})[dk]=v;};
+const getItemName=(dk,id,def)=>S_names[dk]?.[id]??def;
+const setItemName=(dk,id,v)=>{(S_names[dk]??={})[id]=v;};
+const prevWk=wk=>shiftWeekKey(wk,-1);
+
+function getDayProgress(wk,di){const key=DAYS[di];const r=DEFAULT_ROUTINE[key];if(!r)return{done:0,total:0};const items=r.sections.flatMap(s=>s.items);return{done:items.filter(i=>getCheck(wk,key,i.id)).length,total:items.length};}
+
+// ═══ WEIGHT ═══════════════════════════════════════════════════════════
+function updateWeightLabel(v){const n=parseFloat(v);document.getElementById('weightLabel').textContent=(isNaN(n)?weightKg:n)+'kg 루틴';}
+function saveWeight(v){const n=parseFloat(v);if(!isNaN(n)&&n>0){weightKg=n;saveAll();}}
+function toggleWeightPopover(){const p=document.getElementById('weightPopover'),i=document.getElementById('weightInput');const op=!p.classList.contains('open');p.classList.toggle('open');if(op){i.value=weightKg;requestAnimationFrame(()=>{i.focus();i.select();});}}
+function closeWeightPopover(){document.getElementById('weightPopover').classList.remove('open');}
+document.addEventListener('click',e=>{if(!document.getElementById('weightWrap').contains(e.target))closeWeightPopover();});
+
+// ═══ NAV ══════════════════════════════════════════════════════════════
+function shiftWeek(d){currentWeek=shiftWeekKey(currentWeek,d);refresh();}
+function goToThisWeek(){currentWeek=TODAY_WEEK;refresh();}
+function refresh(){renderWeekNav();renderSummary();renderTabs();renderContent();if(yearViewOpen)renderYearView();}
+function renderWeekNav(){
+  const isNow=currentWeek===TODAY_WEEK;
+  const[y,w]=currentWeek.split('-W').map(Number);
+  document.getElementById('weekNavLabel').textContent=isNow?`이번 주 (${w}주차)`:`${y}년 ${w}주차`;
+  document.getElementById('weekNavSub').textContent=formatWeekRange(currentWeek);
+  document.getElementById('weekNavToday').style.display=isNow?'none':'block';
+  document.getElementById('summaryTitle').textContent=isNow?'📅 이번 주 진행률':`📅 ${formatWeekRange(currentWeek)}`;
+}
+function toggleYearView(){yearViewOpen=!yearViewOpen;document.getElementById('yearView').classList.toggle('open',yearViewOpen);document.getElementById('yearToggleBtn').classList.toggle('active',yearViewOpen);if(yearViewOpen)renderYearView();}
+function shiftYear(d){yearViewYear+=d;renderYearView();}
+function renderYearView(){
+  document.getElementById('yearViewLabel').textContent=yearViewYear+'년';
+  const mn=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  let html='';
+  for(let m=0;m<12;m++){
+    const lastDay=new Date(Date.UTC(yearViewYear,m+1,0));
+    let cur=new Date(Date.UTC(yearViewYear,m,1));
+    while(cur.getUTCDay()!==1)cur.setUTCDate(cur.getUTCDate()-1);
+    const weeks=new Set();
+    while(cur<=lastDay){const wk=weekKeyFromDate(cur);const mo=mondayOfWeek(wk);if(mo.getUTCFullYear()===yearViewYear&&mo.getUTCMonth()===m)weeks.add(wk);cur.setUTCDate(cur.getUTCDate()+7);}
+    html+=`<div class="year-month"><div class="year-month-name">${mn[m]}</div><div class="year-weeks">`;
+    [...weeks].forEach(wk=>{
+      const td=DAYS.reduce((a,_,i)=>{const{done,total}=getDayProgress(wk,i);return a+(total>0?done:0);},0);
+      const ta=DAYS.reduce((a,_,i)=>{const{total}=getDayProgress(wk,i);return a+total;},0);
+      const full=ta>0&&td===ta,has=td>0,now=wk===currentWeek;
+      const cls=['year-dot',full?'full':has?'has-data':'',now?'this-week':''].filter(Boolean).join(' ');
+      html+=`<div class="${cls}" title="${wk}" onclick="jumpToWeek('${wk}')"></div>`;
+    });
+    html+=`</div></div>`;
+  }
+  document.getElementById('yearMonths').innerHTML=html;
+}
+function jumpToWeek(wk){currentWeek=wk;refresh();document.getElementById('dayTabs').scrollIntoView({behavior:'smooth',block:'nearest'});}
+
+// ═══ SUMMARY + TABS ═══════════════════════════════════════════════════
+function renderSummary(){document.getElementById('summaryGrid').innerHTML=DAYS.map((d,i)=>{const{done,total}=getDayProgress(currentWeek,i);const pct=total>0?Math.round(done/total*100):0;const dc=total===0?'summary-dot':pct===100?'summary-dot full':pct>0?'summary-dot partial':'summary-dot';const ic=total===0?'😴':pct===100?'✅':pct>0?'🔥':'—';return`<div class="summary-day-block"><div class="summary-day-name">${d}</div><div class="${dc}">${ic}</div><div class="summary-pct">${total>0?pct+'%':'REST'}</div></div>`;}).join('');}
+function renderTabs(){document.getElementById('dayTabs').innerHTML=DAYS.map((d,i)=>{const{done,total}=getDayProgress(currentWeek,i);const full=total>0&&done===total;const cls=['day-tab',i===activeDay?'active':'',full?'completed':''].filter(Boolean).join(' ');const sub=done>0&&!full?` <small style="opacity:.7">${done}/${total}</small>`:'';return`<button class="${cls}" onclick="setDay(${i})">${d}요일${sub}</button>`;}).join('');}
+
+// ═══ CONTENT ══════════════════════════════════════════════════════════
+const tagHtml=tags=>{const map={func:['FUNC','tag-func'],ball:['BALL','tag-ball'],safe:['SAFE','tag-safe'],cardio:['RUN','tag-cardio']};return tags.map(t=>{const[l,c]=map[t]||['',''];return`<span class="ex-tag ${c}">${l}</span>`;}).join('');};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function prevHintHtml(pF,cF){if(!pF||(!pF.kg&&!pF.sets&&!pF.reps))return'';const pts=[];if(pF.kg)pts.push(pF.kg+'kg');if(pF.sets)pts.push(pF.sets+'세트');if(pF.reps)pts.push(pF.reps+'회');let arr='';if(cF.kg&&pF.kg){const d=parseFloat(cF.kg)-parseFloat(pF.kg);if(d>0)arr=`<span class="ex-prev-arrow arr-up">↑${d}kg</span>`;else if(d<0)arr=`<span class="ex-prev-arrow arr-dn">↓${Math.abs(d)}kg</span>`;}return`<div class="ex-prev"><span class="ex-prev-label">지난주</span><span class="ex-prev-val has">${esc(pts.join(' · '))}</span>${arr}</div>`;}
+
+function thumbHtml(id, nameOverride){
+  const data=getSvgData(id)||(nameOverride?getSvgDataFromName(nameOverride):null);
+  if(!data)return`<div class="ex-svg-thumb" style="cursor:default"><svg viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg"><text x="27" y="32" text-anchor="middle" font-size="22">💪</text></svg></div>`;
+  const clickName = esc(nameOverride||'');
+  return`<div class="ex-svg-thumb" onclick="openThumbModal('${id}','${clickName}')">${data.svg}</div>`;
+}
+
+function renderContent(){
+  const key=DAYS[activeDay], el=document.getElementById('dayContent');
+  const r=DEFAULT_ROUTINE[key];
+  const wk=currentWeek;
+  if(!r){
+    el.innerHTML=`<div class="rest-card"><div class="rest-icon">😴</div><div class="rest-title">완전 휴식</div><div class="rest-text">오늘은 완충 충전의 날<br>몸이 성장하는 시간입니다</div><div class="rest-tip">🥤 마프 2스쿱 스무디 볼 or 신타6<br>근육 합성 극대화 챙기기</div></div>`;
+    return;
+  }
+
+  // ── collect all items (builtin + custom) for progress counting
+  const customs = (S_customEx[wk]?.[key] || []);
+  const allBuiltin = r.sections.flatMap(s=>s.items);
+  const totalItems = allBuiltin.length + customs.length;
+  const doneItems  = allBuiltin.filter(i=>getCheck(wk,key,i.id)).length
+                   + customs.filter(c=>getCheck(wk,key,c.id)).length;
+  const pct = totalItems>0 ? Math.round(doneItems/totalItems*100) : 0;
+
+  // ── helper: render one item row
+  function itemRowHtml(id, name, tags, noFields, detail, itemType, fieldVals, isCustom, globalIdx, totalCount) {
+    const chk    = getCheck(wk,key,id);
+    const fields = getFields(wk,key,id);
+    const pF     = getFields(prevWk(wk),key,id);
+    let body='';
+    if(!noFields){
+      body = buildSetLogHtml(wk, key, id, getFields(prevWk(wk),key,id));
+    } else if(CARDIO_TYPES.includes(itemType) || itemType==='running'){
+      body = buildCardioFieldsHtml(wk, key, id, itemType, fieldVals||{});
+    } else {
+      body = detail ? `<div class="ex-detail-txt">${esc(detail)}</div>` : '';
+    }
+
+    const thumb = thumbHtml(id, name);
+    const checkFn = isCustom ? `toggleCustomItem('${wk}','${key}','${id}')` : `toggleItem('${wk}','${key}','${id}')`;
+    const namePart = isCustom
+      ? `<span style="flex:1;font-size:13px;font-weight:600;color:var(--text);padding:2px 4px;">${esc(name)}</span>
+         <button onclick="removeCustomEx('${wk}','${key}','${id}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:6px" title="삭제">✕</button>`
+      : `<span style="flex:1;font-size:13px;font-weight:600;color:var(--text);padding:2px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(name)}</span>
+         <button class="ex-edit-btn" onclick="openEditEx('${key}','${id}',event)" title="수정">✏️</button>`;
+
+    // ss-circle: shown only in superset mode
+    const isPicked = ssSelected.includes(id);
+    const ssCircle = `<div class="ss-circle${isPicked?' picked':''}" id="ssc-${id}">${isPicked?'✓':''}</div>`;
+
+    // reorder buttons
+    const upDis  = globalIdx === 0 ? 'disabled' : '';
+    const dnDis  = globalIdx === totalCount-1 ? 'disabled' : '';
+    const roBtns = `<div class="reorder-btns">
+      <button class="reorder-btn" ${upDis} onclick="reorderMove('${id}',-1,event)" title="위로">↑</button>
+      <button class="reorder-btn" ${dnDis} onclick="reorderMove('${id}',1,event)" title="아래로">↓</button>
+    </div>`;
+
+    // superset visual classes
+    const ssGroups2 = S_supersets[wk]?.[key] || [];
+    const inGroup  = ssGroups2.find(g => g.includes(id));
+    let ssClass = '';
+    if(inGroup){
+      const firstInGroup = inGroup[0]===id;
+      const lastInGroup  = inGroup[inGroup.length-1]===id;
+      if(firstInGroup && !lastInGroup) ssClass=' in-superset superset-first';
+      else if(lastInGroup && !firstInGroup) ssClass=' in-superset superset-last';
+      else ssClass=' in-superset';
+    }
+
+    return `<div class="exercise-item${chk?' checked':''}${ssClass}" id="row-${id}"
+      data-id="${id}" data-idx="${globalIdx}"
+      oncontextmenu="enterReorderMode(event)"
+      ontouchstart="handleLongPress('${id}',event)" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
+      onclick="handleItemClick('${id}',event)">
+      ${roBtns}
+      ${thumb}
+      <div class="ex-right">
+        <div class="ex-top">
+          ${ssCircle}
+          <div class="checkbox" onclick="event.stopPropagation();${checkFn}"><span class="checkbox-icon">✓</span></div>
+          ${tagHtml(tags||[])}
+          ${namePart}
+        </div>
+        ${body}
+      </div>
+    </div>`;
+  }
+
+  // ── flatten all items in order (respecting S_order overrides)
+  // Build flat ordered list: [{id,name,tags,noFields,detail,type,fieldVals,isCustom,sectionIdx}]
+  function buildFlatList() {
+    const list = [];
+    r.sections.forEach((sec,si)=>{
+      sec.items.forEach(item=>{
+        const name=getItemName(key,item.id,item.name);
+        list.push({id:item.id,name,tags:item.tags,noFields:item.noFields,
+          detail:item.detail,type:null,fieldVals:null,isCustom:false,si});
+      });
+      customs.filter(cx=>(cx.sectionIdx??0)===si).forEach(cx=>{
+        list.push({id:cx.id,name:cx.name,tags:cx.tags,noFields:cx.noFields,
+          detail:cx.detail,type:cx.type,fieldVals:cx.fieldVals,isCustom:true,si});
+      });
+    });
+    // Apply saved order
+    const savedOrder = S_order[wk]?.[key];
+    if(savedOrder && savedOrder.length){
+      const idxMap = {};
+      savedOrder.forEach((id,i) => idxMap[id]=i);
+      list.sort((a,b) => {
+        const ai = idxMap[a.id] ?? 9999;
+        const bi = idxMap[b.id] ?? 9999;
+        return ai - bi;
+      });
+    }
+    return list;
+  }
+
+  // ── build sections HTML with flat ordered rendering
+  const flatList = buildFlatList();
+  let sHtml='';
+
+  // Track current section for labels
+  let lastSi = -1;
+  const ssGroups = S_supersets[wk]?.[key] || [];
+
+  flatList.forEach((item, gi) => {
+    // Section label when section changes
+    if(item.si !== lastSi) {
+      if(lastSi >= 0 && item.si !== lastSi) sHtml+=`<div class="divider"></div>`;
+      sHtml+=`<div class="section-label">${r.sections[item.si].label}</div>`;
+      lastSi = item.si;
+    }
+    sHtml+=itemRowHtml(item.id,item.name,item.tags,item.noFields,item.detail,item.type,item.fieldVals,item.isCustom,gi,flatList.length);
+
+    // Superset connector after first item of a pair
+    const myGroup = ssGroups.find(g => g[0]===item.id && g.length>1);
+    if(myGroup){
+      const nextItem = flatList.find(x => x.id===myGroup[1]);
+      if(nextItem){
+        sHtml+=`<div class="superset-connector">
+          <div class="superset-connector-line"></div>
+          <div class="superset-connector-label">SUPERSET</div>
+          <button onclick="unlinkSuperset('${item.id}')" style="background:transparent;border:none;color:rgba(45,212,191,.5);cursor:pointer;font-size:11px;padding:0 4px;line-height:1;" title="해제">✕</button>
+          <div class="superset-connector-line"></div>
+        </div>`;
+      }
+    }
+  });
+
+  const memo=getMemo(wk,key);
+  el.innerHTML=`<div class="day-card">
+    <div class="day-header">
+      <div><div class="day-title">${r.title}</div><div class="day-subtitle">${r.subtitle}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="day-toolbar">
+          <button class="toolbar-btn${reorderMode?' active-reorder':''}" onclick="toggleReorderMode()" title="순서 변경">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <button class="toolbar-btn${supersetMode?' active-ss':''}" onclick="toggleSupersetMode()" title="슈퍼세트">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          </button>
+        </div>
+        <div class="day-progress">
+          <div class="progress-num" id="pn-${key}">${doneItems}<span>/${totalItems}</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="pb-${key}" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+    </div>
+    ${sHtml}
+    <div class="add-exercise-row">
+      <button class="add-exercise-btn" onclick="openAddEx()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        운동 추가
+      </button>
+    </div>
+    <div class="divider" style="margin-top:6px"></div>
+    <div class="memo-area">
+      <div class="memo-label">✏️ 오늘의 메모</div>
+      <textarea class="memo-input" placeholder="컨디션, 느낀점..." oninput="setMemoFn('${wk}','${key}',this.value)">${esc(memo)}</textarea>
+    </div>
+  </div>`;
+}
+
+// ═══ THUMB MODAL ══════════════════════════════════════════════════════
+function openThumbModal(id, nameOverride){
+  const data = getSvgData(id) || (nameOverride ? getSvgDataFromName(nameOverride) : null);
+  if(!data) return;
+  const name = nameOverride ||
+    getItemName(DAYS[activeDay], id,
+      DEFAULT_ROUTINE[DAYS[activeDay]]?.sections.flatMap(s=>s.items).find(i=>i.id===id)?.name || id);
+  document.getElementById('thumbModalName').textContent=name;
+  document.getElementById('thumbModalSvg').innerHTML=data.svg;
+  document.getElementById('thumbModalTips').innerHTML=data.tips.map(t=>`<li>${t}</li>`).join('');
+  document.getElementById('thumbModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeThumbModal(e){if(document.getElementById('thumbSheet').contains(e.target))return;document.getElementById('thumbModal').classList.remove('open');document.body.style.overflow='';}
+
+// ═══ ACTIONS ══════════════════════════════════════════════════════════
+function toggleItem(wk,dk,id){
+  const next=!getCheck(wk,dk,id);setCheck(wk,dk,id,next);saveAll();
+  const row=document.getElementById('row-'+id);if(row)row.classList.toggle('checked',next);
+  const items=DEFAULT_ROUTINE[dk].sections.flatMap(s=>s.items);
+  const done=items.filter(i=>getCheck(wk,dk,i.id)).length,total=items.length;
+  const pn=document.getElementById('pn-'+dk);if(pn)pn.innerHTML=`${done}<span>/${total}</span>`;
+  const pb=document.getElementById('pb-'+dk);if(pb)pb.style.width=Math.round(done/total*100)+'%';
+
+  if(done===total){
+    showToast('🔥 오늘 루틴 완료! 대단해!');
+  } else if(next) {
+    // 세트 완료 → 휴식 타이머 자동 오픈 + 자동 시작
+    showRestFab();
+    rtRemain = rtTotal;
+    document.getElementById('rtRingWrap').classList.remove('done');
+    document.getElementById('rtSub').textContent = '휴식 중…';
+    openRestTimer(true);
+  }
+  renderTabs();renderSummary();if(yearViewOpen)renderYearView();
+}
+function saveField(wk,dk,id,f,v){setFields(wk,dk,id,{[f]:v});saveAll();renderContent();}
+
+// ═══ SET LOG 세트별 실제 기록 ═══════════════════════════════════════════
+// S_setlog[wk][dk][id] = { goal:{kg,sets,reps}, actual:[{kg,reps,done},…] }
+function getSetLog(wk,dk,id){ return S_setlog[wk]?.[dk]?.[id] || {goal:{},actual:[]}; }
+function saveSetLog(wk,dk,id,data){
+  (S_setlog[wk]??={})[dk]??={};
+  S_setlog[wk][dk][id]=data;
+  localStorage.setItem('sfgrind_setlog', JSON.stringify(S_setlog));
+}
+
+function buildSetLogHtml(wk, dk, id, pF) {
+  const log    = getSetLog(wk, dk, id);
+  const goal   = log.goal   || {};
+  const actual = log.actual || [];
+
+  // Goal display from S_fields (목표 중량/세트/횟수)
+  const f = getFields(wk, dk, id);
+
+  // Goal row — editable target
+  const goalKg   = f.kg   || goal.kg   || '';
+  const goalSets = f.sets || goal.sets || '';
+  const goalReps = f.reps || goal.reps || '';
+
+  let goalHtml = `<div class="set-log-goal">
+    <span>목표</span>
+    <input class="ex-field-input" style="width:52px;text-align:center;font-size:12px" type="number" min="0" step="0.5"
+      placeholder="—" value="${esc(goalKg)}"
+      onchange="saveField('${wk}','${dk}','${id}','kg',this.value)" onclick="event.stopPropagation()"/>
+    <span style="font-size:9px;color:var(--muted)">kg</span>
+    <input class="ex-field-input" style="width:36px;text-align:center;font-size:12px" type="number" min="0" step="1"
+      placeholder="—" value="${esc(goalSets)}"
+      onchange="saveField('${wk}','${dk}','${id}','sets',this.value)" onclick="event.stopPropagation()"/>
+    <span style="font-size:9px;color:var(--muted)">세트</span>
+    <input class="ex-field-input" style="width:36px;text-align:center;font-size:12px" type="number" min="0" step="1"
+      placeholder="—" value="${esc(goalReps)}"
+      onchange="saveField('${wk}','${dk}','${id}','reps',this.value)" onclick="event.stopPropagation()"/>
+    <span style="font-size:9px;color:var(--muted)">회</span>
+  </div>`;
+
+  // Actual set rows
+  let rowsHtml = '';
+  actual.forEach((s, i) => {
+    const doneCls = s.done ? ' done' : '';
+    rowsHtml += `<div class="set-log-row${doneCls}" id="slrow-${id}-${i}">
+      <div class="set-log-num">${i+1}</div>
+      <input class="set-log-input kg-input" type="number" min="0" step="0.5"
+        placeholder="${goalKg||'kg'}" value="${esc(s.kg||'')}"
+        onchange="updateSetLogEntry('${wk}','${dk}','${id}',${i},'kg',this.value)"
+        onclick="event.stopPropagation()"/>
+      <span class="set-log-unit">kg</span>
+      <span class="set-log-sep">×</span>
+      <input class="set-log-input reps-input" type="number" min="0" step="1"
+        placeholder="${goalReps||'회'}" value="${esc(s.reps||'')}"
+        onchange="updateSetLogEntry('${wk}','${dk}','${id}',${i},'reps',this.value)"
+        onclick="event.stopPropagation()"/>
+      <span class="set-log-unit">회</span>
+      <button class="set-log-del" onclick="doneSetEntry('${wk}','${dk}','${id}',${i},event)" title="완료">
+        ${s.done ? '✓' : '○'}
+      </button>
+      <button class="set-log-del" onclick="removeSetEntry('${wk}','${dk}','${id}',${i},event)" title="삭제">✕</button>
+    </div>`;
+  });
+
+  // Summary
+  const doneCount = actual.filter(s=>s.done).length;
+  const totalCount = actual.length;
+  const maxKg = actual.length ? Math.max(...actual.map(s=>parseFloat(s.kg)||0)) : 0;
+  const summaryHtml = totalCount > 0 ? `<div class="set-log-summary">
+    <span class="set-log-summary-val done-count">${doneCount}</span>
+    <span>/ ${totalCount} 세트 완료</span>
+    ${maxKg > 0 ? `<span style="margin-left:auto;font-size:9px">최고 <span class="set-log-summary-val">${maxKg}kg</span></span>` : ''}
+  </div>` : '';
+
+  // Prev hint
+  const prevHint = prevHintHtml(pF, {kg: goalKg, sets: String(totalCount||goalSets), reps: goalReps});
+
+  return `<div class="set-log-wrap" onclick="event.stopPropagation()">
+    ${goalHtml}
+    <div class="set-log-rows" id="sl-${id}">${rowsHtml}</div>
+    <button class="set-log-add" onclick="addSetEntry('${wk}','${dk}','${id}',event)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      세트 추가
+    </button>
+    ${summaryHtml}
+    ${prevHint}
+  </div>`;
+}
+
+function addSetEntry(wk, dk, id, e) {
+  if(e) e.stopPropagation();
+  const log    = getSetLog(wk, dk, id);
+  const f      = getFields(wk, dk, id);
+  // Default to goal kg/reps as placeholder suggestion
+  log.actual   = log.actual || [];
+  log.actual.push({ kg: f.kg || '', reps: f.reps || '', done: false });
+  saveSetLog(wk, dk, id, log);
+  // Partial re-render: just the set-log-wrap area
+  renderContent();
+  // Auto-focus the new row's reps field
+  requestAnimationFrame(() => {
+    const rows = document.querySelectorAll(`#sl-${id} .set-log-row`);
+    const last = rows[rows.length-1];
+    last?.querySelector('.reps-input')?.focus();
+  });
+}
+
+function updateSetLogEntry(wk, dk, id, idx, field, val) {
+  const log = getSetLog(wk, dk, id);
+  if(!log.actual[idx]) return;
+  log.actual[idx][field] = val;
+  saveSetLog(wk, dk, id, log);
+  // update fields kg for analytics (use max kg from sets)
+  const maxKg = Math.max(...log.actual.map(s=>parseFloat(s.kg)||0));
+  const totalSets = log.actual.length;
+  const lastReps  = log.actual[log.actual.length-1]?.reps || '';
+  setFields(wk, dk, id, { kg: maxKg||getFields(wk,dk,id).kg, sets: String(totalSets), reps: lastReps });
+  saveAll();
+}
+
+function doneSetEntry(wk, dk, id, idx, e) {
+  if(e) e.stopPropagation();
+  const log = getSetLog(wk, dk, id);
+  if(!log.actual[idx]) return;
+  log.actual[idx].done = !log.actual[idx].done;
+  saveSetLog(wk, dk, id, log);
+  // Update row visually without full re-render
+  const row = document.getElementById(`slrow-${id}-${idx}`);
+  if(row){
+    row.classList.toggle('done', log.actual[idx].done);
+    const btn = row.querySelectorAll('.set-log-del')[0];
+    if(btn) btn.textContent = log.actual[idx].done ? '✓' : '○';
+  }
+  // Update summary
+  const f = getFields(wk, dk, id);
+  setFields(wk, dk, id, { sets: String(log.actual.length) });
+  saveAll();
+  // Update progress bar
+  const items = DEFAULT_ROUTINE[dk]?.sections.flatMap(s=>s.items) || [];
+  const customs = S_customEx[currentWeek]?.[dk] || [];
+  const allIds = [...items.map(i=>i.id), ...customs.map(c=>c.id)];
+  const done = allIds.filter(i=>getCheck(wk,dk,i)).length;
+  const pn = document.getElementById('pn-'+dk); if(pn) pn.innerHTML=`${done}<span>/${allIds.length}</span>`;
+  // Toast on all sets done
+  const doneCount = log.actual.filter(s=>s.done).length;
+  if(doneCount === log.actual.length && log.actual.length > 0)
+    showToast(`💪 ${log.actual.length}세트 완료!`);
+}
+
+function removeSetEntry(wk, dk, id, idx, e) {
+  if(e) e.stopPropagation();
+  const log = getSetLog(wk, dk, id);
+  log.actual.splice(idx, 1);
+  saveSetLog(wk, dk, id, log);
+  setFields(wk, dk, id, { sets: String(log.actual.length) });
+  saveAll();
+  renderContent();
+}
+function saveItemNameFn(dk,id,v){
+  setItemName(dk,id,v);
+  saveAll();
+  // 이름 변경 즉시 썸네일 그림도 업데이트
+  const thumbEl=document.querySelector(`#row-${id} .ex-svg-thumb`);
+  if(thumbEl){
+    const tmp=document.createElement('div');
+    tmp.innerHTML=thumbHtml(id);
+    thumbEl.replaceWith(tmp.firstElementChild);
+  }
+  showToast('✅ 저장 — 그림도 업데이트됨');
+}
+function setMemoFn(wk,dk,v){setMemo(wk,dk,v);saveAll();}
+function setDay(idx){
+  activeDay=idx;
+  exitReorderMode();
+  exitSupersetMode();
+  renderTabs();renderContent();loadSessionForDay();updateKcalDisplay();
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),2200);}
+function setDate(){const now=new Date();const dn=['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];document.getElementById('headerDate').textContent=`${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()} ${dn[now.getDay()]}`;}
+
+// ═══ REST TIMER ═══════════════════════════════════════════════════════
+const CIRCUMFERENCE = 2 * Math.PI * 86; // r=86 → ~540
+
+let rtTotal    = 90;   // 선택된 시간 (초)
+let rtRemain   = 90;   // 남은 시간
+let rtRunning  = false;
+let rtInterval = null;
+let rtAutoOpen = false; // 체크 시 자동 오픈 여부
+
+function openRestTimer(autoStart = false) {
+  document.getElementById('restOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  updateRtDisplay();
+  if (autoStart && !rtRunning) startRestTimer();
+}
+
+function closeRestTimer() {
+  document.getElementById('restOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleRestOverlayClick(e) {
+  if (document.getElementById('restSheet').contains(e.target)) return;
+  closeRestTimer();
+}
+
+function setPreset(sec) {
+  stopRestTimer();
+  rtTotal = sec;
+  rtRemain = sec;
+  document.getElementById('rtRingWrap').classList.remove('done');
+  // update active preset button
+  document.querySelectorAll('.rt-preset').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === sec/60 ||
+      (sec===90 && b.textContent==='1분 30초') ||
+      (sec===60 && b.textContent==='1분') ||
+      (sec===120 && b.textContent==='2분') ||
+      (sec===180 && b.textContent==='3분') ||
+      (sec===300 && b.textContent==='5분')
+    );
+  });
+  updateRtDisplay();
+}
+
+function toggleRestTimer() {
+  rtRunning ? stopRestTimer() : startRestTimer();
+}
+
+function startRestTimer() {
+  if (rtRemain <= 0) { rtRemain = rtTotal; document.getElementById('rtRingWrap').classList.remove('done'); }
+  rtRunning = true;
+  document.getElementById('rtPlayBtn').textContent = '⏸';
+  document.getElementById('rtPlayBtn').classList.add('running');
+  document.getElementById('rtSub').textContent = '휴식 중…';
+  rtInterval = setInterval(() => {
+    rtRemain--;
+    updateRtDisplay();
+    updateFabLabel();
+    if (rtRemain <= 0) {
+      clearInterval(rtInterval);
+      rtRunning = false;
+      rtRemain = 0;
+      document.getElementById('rtPlayBtn').textContent = '▶';
+      document.getElementById('rtPlayBtn').classList.remove('running');
+      document.getElementById('rtRingWrap').classList.add('done');
+      document.getElementById('rtSub').textContent = '완료! 🔥';
+      // Vibrate on phones
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      // Sound beep
+      playBeep();
+    }
+  }, 1000);
+}
+
+function stopRestTimer() {
+  clearInterval(rtInterval);
+  rtRunning = false;
+  document.getElementById('rtPlayBtn').textContent = '▶';
+  document.getElementById('rtPlayBtn').classList.remove('running');
+}
+
+function skipRest() {
+  stopRestTimer();
+  rtRemain = 0;
+  document.getElementById('rtRingWrap').classList.add('done');
+  document.getElementById('rtSub').textContent = '스킵!';
+  updateRtDisplay();
+  setTimeout(closeRestTimer, 600);
+}
+
+function updateRtDisplay() {
+  const m = Math.floor(rtRemain / 60);
+  const s = rtRemain % 60;
+  document.getElementById('rtTime').textContent = `${m}:${String(s).padStart(2,'0')}`;
+  // Arc progress
+  const ratio = rtTotal > 0 ? rtRemain / rtTotal : 0;
+  const offset = CIRCUMFERENCE * (1 - ratio);
+  document.getElementById('rtArc').style.strokeDashoffset = offset;
+  // Colour warning when <10s
+  const arc = document.getElementById('rtArc');
+  if (rtRemain <= 10 && rtRemain > 0) arc.style.stroke = 'var(--red)';
+  else if (rtRemain <= 0) arc.style.stroke = 'var(--green)';
+  else arc.style.stroke = 'var(--orange)';
+}
+
+function updateFabLabel() {
+  const m = Math.floor(rtRemain / 60);
+  const s = rtRemain % 60;
+  const label = rtRunning ? `${m}:${String(s).padStart(2,'0')}` : '휴식';
+  document.getElementById('fabLabel').textContent = label;
+}
+
+// Show FAB after first exercise is checked
+function showRestFab() {
+  const fab = document.getElementById('restFab');
+  fab.classList.add('show');
+}
+
+// Simple audio beep using Web Audio API
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.25, 0.5].forEach(t => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+      osc.start(ctx.currentTime + t);
+      osc.stop(ctx.currentTime + t + 0.2);
+    });
+  } catch(e) {}
+}
+
+// ═══ PAGE NAVIGATION ══════════════════════════════════════════════════
+let currentPage = 'home';
+
+function switchPage(page) {
+  currentPage = page;
+  document.getElementById('homePage').classList.toggle('hidden', page !== 'home');
+  document.getElementById('statsPage').classList.toggle('active', page === 'stats');
+  document.getElementById('navHome').classList.toggle('active', page === 'home');
+  document.getElementById('navStats').classList.toggle('active', page === 'stats');
+  if (page === 'stats') renderStats();
+}
+
+// ═══ STATS ENGINE ══════════════════════════════════════════════════════
+// Weight-bearing exercises only (those with kg/sets/reps fields)
+const WEIGHT_EXERCISES = [
+  {id:'m2', name:'벤치 프레스'},
+  {id:'m3', name:'풀업'},
+  {id:'m4', name:'OHP'},
+  {id:'m5', name:'바벨 로우'},
+  {id:'t1', name:'백 스쿼트'},
+  {id:'t3', name:'레그 프레스'},
+  {id:'t5', name:'카프 레이즈'},
+  {id:'th1',name:'랫풀다운'},
+  {id:'th2',name:'숄더 프레스'},
+  {id:'th3',name:'바벨 컬'},
+  {id:'f1', name:'RDL'},
+  {id:'f2', name:'런지'},
+  {id:'f3', name:'레그 익스텐션'},
+];
+
+// Map item ID → day key
+const ID_TO_DAY = {
+  m1:'월',m2:'월',m3:'월',m4:'월',m5:'월',m6:'월',
+  t1:'화',t2:'화',t3:'화',t4:'화',t5:'화',
+  w1:'수',w2:'수',w3:'수',w4:'수',w5:'수',w6:'수',w7:'수',
+  th1:'목',th2:'목',th3:'목',th4:'목',th5:'목',th6:'목',
+  f1:'금',f2:'금',f3:'금',
+  sa1:'토',sa2:'토',
+};
+
+// Epley 1RM formula: weight × (1 + reps/30)
+function epley1RM(kg, reps) {
+  if (!kg || !reps || reps < 1) return 0;
+  return Math.round(parseFloat(kg) * (1 + parseFloat(reps) / 30));
+}
+
+// Get last N weeks (most recent first)
+function getRecentWeeks(n = 12) {
+  const weeks = [];
+  let wk = TODAY_WEEK;
+  for (let i = 0; i < n; i++) {
+    weeks.unshift(wk);
+    wk = shiftWeekKey(wk, -1);
+  }
+  return weeks;
+}
+
+// Weekly volume for all exercises: sum of sets×reps×kg
+function weekVolume(wk) {
+  let total = 0;
+  WEIGHT_EXERCISES.forEach(ex => {
+    const dk = ID_TO_DAY[ex.id];
+    const log = S_setlog[wk]?.[dk]?.[ex.id];
+    if(log?.actual?.length) {
+      // Use actual logged sets
+      log.actual.forEach(s => {
+        total += (parseFloat(s.reps)||0) * (parseFloat(s.kg)||0);
+      });
+    } else {
+      const f = getFields(wk, dk, ex.id);
+      const sets = parseFloat(f.sets) || 0;
+      const reps = parseFloat(f.reps) || 0;
+      const kg   = parseFloat(f.kg)   || 0;
+      total += sets * reps * kg;
+    }
+  });
+  return Math.round(total);
+}
+
+// Best (max kg) for a specific exercise across a week
+function weekBestKg(wk, itemId) {
+  const dk = ID_TO_DAY[itemId];
+  const log = S_setlog[wk]?.[dk]?.[itemId];
+  if(log?.actual?.length) {
+    return Math.max(...log.actual.map(s=>parseFloat(s.kg)||0));
+  }
+  const f = getFields(wk, dk, itemId);
+  return parseFloat(f.kg) || 0;
+}
+
+// Weekly completion stats
+function weekStats(wk) {
+  let done = 0, total = 0;
+  DAYS.forEach((dk, i) => {
+    const r = DEFAULT_ROUTINE[dk];
+    if (!r) return;
+    const items = r.sections.flatMap(s => s.items);
+    items.forEach(item => {
+      total++;
+      if (getCheck(wk, dk, item.id)) done++;
+    });
+  });
+  return { done, total, pct: total > 0 ? Math.round(done / total * 100) : 0 };
+}
+
+// ── Canvas chart helpers ──────────────────────────────────────────────
+function drawBarChart(canvasId, labels, values, color = '#FF6B1A') {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  if (!values.length || values.every(v => v === 0)) {
+    ctx.fillStyle = '#555';
+    ctx.font = '11px Noto Sans KR, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('아직 기록된 데이터가 없어요', W/2, H/2);
+    return;
+  }
+
+  const PAD = { top:16, right:8, bottom:28, left:44 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+  const max = Math.max(...values, 1);
+
+  // Grid lines
+  ctx.strokeStyle = '#2A2A35'; ctx.lineWidth = 1;
+  [0.25, 0.5, 0.75, 1].forEach(r => {
+    const y = PAD.top + cH * (1 - r);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+    ctx.fillStyle = '#555'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(max * r).toLocaleString(), PAD.left - 4, y + 3);
+  });
+
+  // Bars
+  const barW = Math.max(4, (cW / labels.length) * 0.6);
+  const gap   = cW / labels.length;
+  labels.forEach((lbl, i) => {
+    const v = values[i] || 0;
+    const barH = (v / max) * cH;
+    const x = PAD.left + gap * i + (gap - barW) / 2;
+    const y = PAD.top + cH - barH;
+
+    // Bar with rounded top
+    const r = Math.min(4, barW / 2);
+    ctx.fillStyle = v > 0 ? color : '#2A2A35';
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + barW - r, y);
+    ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+    ctx.lineTo(x + barW, y + barH);
+    ctx.lineTo(x, y + barH);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = '#555'; ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(lbl, x + barW/2, H - PAD.bottom + 10);
+  });
+}
+
+function drawLineChart(canvasId, labels, datasets) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const allVals = datasets.flatMap(d => d.data).filter(v => v > 0);
+  if (!allVals.length) {
+    ctx.fillStyle = '#555'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('아직 기록된 데이터가 없어요', W/2, H/2);
+    return;
+  }
+
+  const PAD = { top:16, right:12, bottom:28, left:44 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+  const max = Math.max(...allVals) * 1.1;
+  const min = Math.max(0, Math.min(...allVals) * 0.85);
+
+  // Grid
+  ctx.strokeStyle = '#2A2A35'; ctx.lineWidth = 1;
+  [0, 0.5, 1].forEach(r => {
+    const y = PAD.top + cH * (1 - r);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+    ctx.fillStyle = '#555'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
+    const val = min + (max - min) * r;
+    ctx.fillText(Math.round(val) + 'kg', PAD.left - 4, y + 3);
+  });
+
+  // Labels
+  labels.forEach((lbl, i) => {
+    const x = PAD.left + (cW / (labels.length - 1 || 1)) * i;
+    ctx.fillStyle = '#555'; ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(lbl, x, H - PAD.bottom + 10);
+  });
+
+  // Lines + dots
+  datasets.forEach(ds => {
+    const pts = ds.data.map((v, i) => ({
+      x: PAD.left + (cW / (labels.length - 1 || 1)) * i,
+      y: v > 0 ? PAD.top + cH - ((v - min) / (max - min || 1)) * cH : null
+    }));
+
+    // Line
+    ctx.strokeStyle = ds.color; ctx.lineWidth = 2.2; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    let started = false;
+    pts.forEach(p => {
+      if (p.y === null) return;
+      if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+      else ctx.lineTo(p.x, p.y);
+    });
+    ctx.stroke();
+
+    // Dots
+    pts.forEach(p => {
+      if (p.y === null) return;
+      ctx.fillStyle = ds.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#0F0F12';
+      ctx.beginPath(); ctx.arc(p.x, p.y, 1.8, 0, Math.PI*2); ctx.fill();
+    });
+  });
+}
+
+// ── Selected exercise for weight chart ───────────────────────────────
+let selectedExId = 'm2';
+
+function selectEx(id) {
+  selectedExId = id;
+  document.querySelectorAll('.ex-pill').forEach(p =>
+    p.classList.toggle('active', p.dataset.id === id));
+  renderWeightChart();
+}
+
+function renderWeightChart() {
+  const weeks = getRecentWeeks(12);
+  const labels = weeks.map(wk => {
+    const m = mondayOfWeek(wk);
+    return `${m.getUTCMonth()+1}/${m.getUTCDate()}`;
+  });
+  const data = weeks.map(wk => weekBestKg(wk, selectedExId));
+  drawLineChart('weightChart', labels, [{ data, color: '#FF6B1A' }]);
+}
+
+// ── Main render stats ─────────────────────────────────────────────────
+function renderStats() {
+  const weeks = getRecentWeeks(12);
+
+  // ── Summary cards ──
+  const activeWeeks = weeks.filter(wk => weekVolume(wk) > 0).length;
+  const totalSessions = weeks.reduce((acc, wk) => {
+    return acc + DAYS.reduce((a, dk, i) => {
+      const r = DEFAULT_ROUTINE[dk];
+      if (!r) return a;
+      const items = r.sections.flatMap(s => s.items);
+      const anyDone = items.some(item => getCheck(wk, dk, item.id));
+      return a + (anyDone ? 1 : 0);
+    }, 0);
+  }, 0);
+  const allPct = weeks.map(wk => weekStats(wk).pct);
+  const avgPct = allPct.length ? Math.round(allPct.reduce((a,b)=>a+b,0)/allPct.length) : 0;
+
+  document.getElementById('scTotalWeeks').innerHTML  = `${activeWeeks}<span>주</span>`;
+  document.getElementById('scTotalSessions').innerHTML = `${totalSessions}<span>회</span>`;
+  document.getElementById('scConsistency').innerHTML  = `${avgPct}<span>%</span>`;
+
+  // ── Heatmap ──
+  const hm = document.getElementById('heatmapGrid');
+  hm.innerHTML = '';
+  // 12 weeks × 7 days = 84 cells, column = day of week
+  // Render row by row (week), but grid is set to 7 cols so each row = one week
+  weeks.forEach(wk => {
+    DAYS.forEach((dk, di) => {
+      const r = DEFAULT_ROUTINE[dk];
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      if (!r) { // rest day
+        cell.style.background = 'transparent';
+      } else {
+        const items = r.sections.flatMap(s => s.items);
+        const done = items.filter(i => getCheck(wk, dk, i.id)).length;
+        const total = items.length;
+        const pct = total > 0 ? done / total : 0;
+        if (pct === 0)        cell.classList.add('');
+        else if (pct < 0.34)  cell.classList.add('p1');
+        else if (pct < 0.67)  cell.classList.add('p2');
+        else if (pct < 1)     cell.classList.add('p3');
+        else                  cell.classList.add('done');
+      }
+      const mon = mondayOfWeek(wk);
+      const dayDate = new Date(mon); dayDate.setUTCDate(mon.getUTCDate() + di);
+      cell.title = `${dayDate.getUTCMonth()+1}/${dayDate.getUTCDate()} ${dk}`;
+      hm.appendChild(cell);
+    });
+  });
+
+  // ── Volume bar chart ──
+  const volLabels = weeks.map(wk => {
+    const m = mondayOfWeek(wk);
+    return `${m.getUTCMonth()+1}/${m.getUTCDate()}`;
+  });
+  const volData = weeks.map(wk => weekVolume(wk));
+  requestAnimationFrame(() => drawBarChart('volumeChart', volLabels, volData));
+
+  // ── Exercise pills ──
+  const pillsEl = document.getElementById('exPills');
+  pillsEl.innerHTML = WEIGHT_EXERCISES.map(ex =>
+    `<button class="ex-pill${ex.id === selectedExId ? ' active' : ''}"
+      data-id="${ex.id}" onclick="selectEx('${ex.id}')">${ex.name}</button>`
+  ).join('');
+  requestAnimationFrame(() => renderWeightChart());
+
+  // ── 1RM & PR list ──
+  const prEl = document.getElementById('prList');
+  const prRows = WEIGHT_EXERCISES.map(ex => {
+    // Find best 1RM across all stored weeks
+    let best1RM = 0, bestKg = 0, bestWeek = null;
+    let prev1RM = 0;
+    const allWks = Object.keys(S_fields);
+    allWks.forEach(wk => {
+      const dk = ID_TO_DAY[ex.id];
+      // Try setlog first (actual sets), fall back to S_fields
+      const log = S_setlog[wk]?.[dk]?.[ex.id];
+      if(log?.actual?.length) {
+        log.actual.forEach(s => {
+          const rm = epley1RM(s.kg, s.reps);
+          if(rm > best1RM){ best1RM=rm; bestKg=parseFloat(s.kg)||0; bestWeek=wk; }
+        });
+      } else {
+        const f = getFields(wk, dk, ex.id);
+        const rm = epley1RM(f.kg, f.reps);
+        if(rm > best1RM){ best1RM=rm; bestKg=parseFloat(f.kg)||0; bestWeek=wk; }
+      }
+    });
+    // Previous best (excluding current best week)
+    allWks.filter(w => w !== bestWeek).forEach(wk => {
+      const dk = ID_TO_DAY[ex.id];
+      const log = S_setlog[wk]?.[dk]?.[ex.id];
+      if(log?.actual?.length) {
+        log.actual.forEach(s => {
+          const rm = epley1RM(s.kg, s.reps);
+          if(rm > prev1RM) prev1RM = rm;
+        });
+      } else {
+        const f = getFields(wk, dk, ex.id);
+        const rm = epley1RM(f.kg, f.reps);
+        if(rm > prev1RM) prev1RM = rm;
+      }
+    });
+    return { ex, best1RM, bestKg, prev1RM };
+  }).filter(r => r.best1RM > 0)
+    .sort((a, b) => b.best1RM - a.best1RM);
+
+  if (!prRows.length) {
+    prEl.innerHTML = '<div class="chart-empty">운동 기록을 쌓으면 여기에 나타나요 💪</div>';
+  } else {
+    prEl.innerHTML = prRows.map(({ex, best1RM, bestKg, prev1RM}) => {
+      const delta = best1RM - prev1RM;
+      const deltaHtml = delta > 0
+        ? `<span class="pr-delta up">↑${delta}kg</span>`
+        : delta < 0 ? `<span class="pr-delta dn">↓${Math.abs(delta)}kg</span>` : '';
+      return `<div class="pr-row">
+        <div>
+          <div class="pr-name">${ex.name}</div>
+          <div class="pr-1rm">최고 중량 ${bestKg}kg · 추정 1RM</div>
+        </div>
+        <div style="text-align:right">
+          <div class="pr-val">${best1RM}kg ${deltaHtml}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// Re-render charts on resize
+window.addEventListener('resize', () => {
+  if (currentPage === 'stats') {
+    const weeks = getRecentWeeks(12);
+    const volLabels = weeks.map(wk => { const m = mondayOfWeek(wk); return `${m.getUTCMonth()+1}/${m.getUTCDate()}`; });
+    drawBarChart('volumeChart', volLabels, weeks.map(wk => weekVolume(wk)));
+    renderWeightChart();
+  }
+});
+
+// ═══ SESSION TIMER ════════════════════════════════════════════════════
+let S_sessions  = JSON.parse(localStorage.getItem('sfgrind_sessions') || '{}');
+let sessionRunning  = false;
+let sessionStartTs  = 0;
+let sessionElapsed  = 0;
+let sessionInterval = null;
+
+function saveSessions() { localStorage.setItem('sfgrind_sessions', JSON.stringify(S_sessions)); }
+
+// ─ Start Card setup ──────────────────────────────────────────────────
+// ─ Start Card ────────────────────────────────────────────────────────
+function setupStartCard() {
+  const dk  = DAYS[activeDay];
+  const r   = DEFAULT_ROUTINE[dk];
+  const now = new Date();
+  const dn  = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  document.getElementById('scDate').textContent =
+    `${now.getMonth()+1}/${now.getDate()} (${dn[now.getDay()]})`;
+
+  const btn = document.getElementById('scBtn');
+  if (!r) {
+    document.getElementById('scTitle').textContent = '오늘은 휴식일 😴';
+    document.getElementById('scSub').textContent   = '완전한 휴식도 루틴의 일부예요';
+    document.getElementById('scStats').innerHTML   = '';
+    btn.innerHTML = '💤 오늘은 쉬어가기';
+    btn.onclick   = skipStartCard;
+    return;
+  }
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg> 운동 시작하기';
+  btn.onclick   = startSessionFromCard;
+
+  const items  = r.sections.flatMap(s => s.items);
+  const wItems = items.filter(i => !i.noFields);
+  const prevWk = shiftWeekKey(currentWeek, -1);
+  let prevVol  = 0;
+  wItems.forEach(item => {
+    const f = getFields(prevWk, dk, item.id);
+    prevVol += (parseFloat(f.sets)||0)*(parseFloat(f.reps)||0)*(parseFloat(f.kg)||0);
+  });
+  const prevMins = Math.round((S_sessions[prevWk]?.[dk]?.durationSec || 0) / 60);
+  document.getElementById('scTitle').textContent = r.title.replace(/^\[..\] /,'');
+  document.getElementById('scSub').textContent   = r.subtitle;
+  document.getElementById('scStats').innerHTML   = `
+    <div class="sc-stat"><div class="sc-stat-val">${items.length}<span> 개</span></div><div class="sc-stat-lbl">오늘 항목</div></div>
+    <div class="sc-stat"><div class="sc-stat-val">${wItems.length}<span> 개</span></div><div class="sc-stat-lbl">웨이트</div></div>
+    <div class="sc-stat"><div class="sc-stat-val">${prevVol>0?Math.round(prevVol/100)/10:'—'}<span>${prevVol>0?' T':''}</span></div><div class="sc-stat-lbl">지난주 볼륨</div></div>
+    <div class="sc-stat"><div class="sc-stat-val">${prevMins>0?prevMins:'—'}<span>${prevMins>0?' 분':''}</span></div><div class="sc-stat-lbl">지난주 시간</div></div>
+  `;
+}
+
+function skipStartCard() {
+  document.getElementById('startCard').classList.add('dismissed');
+}
+
+function startSessionFromCard() {
+  document.getElementById('startCard').classList.add('dismissed');
+  document.getElementById('sessionBar').style.display = '';
+  startSession();
+}
+
+// ─ Timer core ────────────────────────────────────────────────────────
+function startSession() {
+  if (sessionRunning) return;
+  sessionRunning = true;
+  sessionStartTs = Date.now() - sessionElapsed * 1000;
+  sessionInterval = setInterval(() => {
+    sessionElapsed = Math.floor((Date.now() - sessionStartTs) / 1000);
+    updateSessionUI();
+    updateKcalDisplay();
+  }, 1000);
+  document.getElementById('sessionBar').classList.add('running');
+}
+
+function stopSession() {
+  if (!sessionRunning) return;
+  clearInterval(sessionInterval);
+  sessionRunning = false;
+  _saveSessionData();
+  // Swap bars
+  document.getElementById('sessionBar').style.display     = 'none';
+  document.getElementById('sessionDoneBar').style.display = '';
+  _refreshDoneBar();
+  showToast(`✅ ${fmtTime(sessionElapsed)} 기록됨`);
+}
+
+function _saveSessionData() {
+  const wk = currentWeek, dk = DAYS[activeDay];
+  if (!S_sessions[wk]) S_sessions[wk] = {};
+  S_sessions[wk][dk] = { durationSec: sessionElapsed, kcal: estimateKcal(sessionElapsed) };
+  saveSessions();
+}
+
+function _refreshDoneBar() {
+  const el = document.getElementById('sessionDoneDisplay');
+  if (el) el.textContent = fmtTime(sessionElapsed);
+  const kcalEl = document.getElementById('kcalDoneVal');
+  if (kcalEl) kcalEl.textContent = estimateKcal(sessionElapsed).toLocaleString() || '—';
+}
+
+function resetSession() {
+  clearInterval(sessionInterval);
+  sessionRunning = false; sessionElapsed = 0;
+  const wk = currentWeek, dk = DAYS[activeDay];
+  if (S_sessions[wk]) delete S_sessions[wk][dk];
+  saveSessions();
+  document.getElementById('sessionBar').style.display     = 'none';
+  document.getElementById('sessionDoneBar').style.display = 'none';
+  document.getElementById('sessionBar').classList.remove('running');
+  document.getElementById('startCard').classList.remove('dismissed');
+  setupStartCard();
+}
+
+// ─ Load on day switch ─────────────────────────────────────────────────
+function loadSessionForDay() {
+  clearInterval(sessionInterval);
+  sessionRunning = false;
+  const wk = currentWeek, dk = DAYS[activeDay];
+  const s  = S_sessions[wk]?.[dk];
+  if (s) {
+    sessionElapsed = s.durationSec || 0;
+    document.getElementById('startCard').classList.add('dismissed');
+    document.getElementById('sessionBar').style.display     = 'none';
+    document.getElementById('sessionDoneBar').style.display = '';
+    _refreshDoneBar();
+  } else {
+    sessionElapsed = 0;
+    document.getElementById('startCard').classList.remove('dismissed');
+    document.getElementById('sessionBar').style.display     = 'none';
+    document.getElementById('sessionDoneBar').style.display = 'none';
+    document.getElementById('sessionBar').classList.remove('running');
+    setupStartCard();
+  }
+  updateSessionUI();
+}
+
+// ─ Edit modal ─────────────────────────────────────────────────────────
+function openSessionEdit() {
+  const h = Math.floor(sessionElapsed / 3600);
+  const m = Math.floor((sessionElapsed % 3600) / 60);
+  document.getElementById('seHours').value = h || '';
+  document.getElementById('seMins').value  = m || '';
+  document.getElementById('seOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('seMins').focus(), 100);
+}
+
+function closeSessionEdit(e) {
+  if (e && document.getElementById('seCard').contains(e.target)) return;
+  document.getElementById('seOverlay').classList.remove('open');
+}
+function closeSessionEditDirect() {
+  document.getElementById('seOverlay').classList.remove('open');
+}
+
+function saveSessionEdit() {
+  const h = parseInt(document.getElementById('seHours').value) || 0;
+  const m = parseInt(document.getElementById('seMins').value)  || 0;
+  const newSec = h * 3600 + m * 60;
+  if (newSec <= 0) { showToast('⚠️ 시간을 입력해주세요'); return; }
+  sessionElapsed = newSec;
+
+  // If currently running, adjust start timestamp
+  if (sessionRunning) {
+    sessionStartTs = Date.now() - sessionElapsed * 1000;
+    updateSessionUI();
+    updateKcalDisplay();
+  } else {
+    // Save to storage
+    _saveSessionData();
+    _refreshDoneBar();
+    updateSessionUI();
+  }
+  document.getElementById('seOverlay').classList.remove('open');
+  showToast(`✅ ${fmtTime(sessionElapsed)}으로 수정됨`);
+}
+
+// ─ Utilities ──────────────────────────────────────────────────────────
+function fmtTime(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function updateSessionUI() {
+  const el = document.getElementById('sessionDisplay');
+  if (el) el.textContent = fmtTime(sessionElapsed);
+}
+
+function updateKcalDisplay() {
+  const kcal = estimateKcal(sessionElapsed);
+  const el = document.getElementById('kcalVal');
+  if (el) el.textContent = kcal > 0 ? kcal.toLocaleString() : '—';
+}
+
+// ─── 칼로리 추정 (MET 기반) ───────────────────────────────────────────
+function estimateKcal(durationSec) {
+  if (durationSec < 60) return 0;
+  const hrs = durationSec / 3600;
+  const wk  = currentWeek, dk = DAYS[activeDay];
+  let vol = 0;
+  const r = DEFAULT_ROUTINE[dk];
+  if (r) {
+    r.sections.flatMap(s => s.items).forEach(item => {
+      if (item.noFields) return;
+      const f = getFields(wk, dk, item.id);
+      vol += (parseFloat(f.sets)||0) * (parseFloat(f.reps)||0) * (parseFloat(f.kg)||0);
+    });
+  }
+  const met = 3.5 + Math.min(2.0, vol / 5000);
+  return Math.round(met * weightKg * hrs);
+}
+
+function weekSessionMins(wk) {
+  const dayData = S_sessions[wk] || {};
+  return Math.round(Object.values(dayData).reduce((a, s) => a + (s.durationSec||0), 0) / 60);
+}
+
+function weekKcal(wk) {
+  const dayData = S_sessions[wk] || {};
+  return Object.values(dayData).reduce((a, s) => a + (s.kcal||0), 0);
+}
+
+// ═══ WEIGHT CONFIRM ════════════════════════════════════════════════════
+const WC_COOLDOWN_MS = 24 * 60 * 60 * 1000; // once per day
+
+function maybeShowWeightConfirm() {
+  const last = parseInt(localStorage.getItem('sfgrind_wc_last') || '0');
+  if (Date.now() - last < WC_COOLDOWN_MS) return;
+  document.getElementById('wcCurrent').textContent = weightKg;
+  document.getElementById('wcInput').value = '';
+  document.getElementById('wcInput').placeholder = weightKg;
+  document.getElementById('wcOverlay').classList.add('open');
+}
+
+function confirmWeight(update) {
+  if (update) {
+    const v = parseFloat(document.getElementById('wcInput').value);
+    if (!isNaN(v) && v > 0) {
+      weightKg = v;
+      saveAll();
+      document.getElementById('weightLabel').textContent = weightKg + 'kg 루틴';
+      showToast(`⚖️ 체중 ${weightKg}kg 업데이트!`);
+    }
+  }
+  localStorage.setItem('sfgrind_wc_last', String(Date.now()));
+  document.getElementById('wcOverlay').classList.remove('open');
+}
+
+// ═══ STATS EXTENSION (time + kcal + 1RM chart) ═════════════════════════
+let selected1rmId = 'm2';
+
+function select1rm(id) {
+  selected1rmId = id;
+  document.querySelectorAll('.ex-pill-1rm').forEach(p =>
+    p.classList.toggle('active', p.dataset.id === id));
+  render1rmChart();
+}
+
+function render1rmChart() {
+  const weeks = getRecentWeeks(12);
+  const labels = weeks.map(wk => {
+    const m = mondayOfWeek(wk); return `${m.getUTCMonth()+1}/${m.getUTCDate()}`;
+  });
+  const data = weeks.map(wk => {
+    const dk = ID_TO_DAY[selected1rmId];
+    const f = getFields(wk, dk, selected1rmId);
+    return epley1RM(f.kg, f.reps);
+  });
+  drawLineChart('rm1Chart', labels, [{ data, color: '#FBBF24' }]);
+}
+
+// Patch renderStats to also render time, kcal, 1RM chart
+const _origRenderStats = renderStats;
+function renderStats() {
+  _origRenderStats();
+
+  const weeks = getRecentWeeks(12);
+  const labels = weeks.map(wk => {
+    const m = mondayOfWeek(wk); return `${m.getUTCMonth()+1}/${m.getUTCDate()}`;
+  });
+
+  // 1RM pills
+  const pills1rm = document.getElementById('exPills1rm');
+  if (pills1rm) {
+    pills1rm.innerHTML = WEIGHT_EXERCISES.map(ex =>
+      `<button class="ex-pill ex-pill-1rm${ex.id === selected1rmId ? ' active' : ''}"
+        data-id="${ex.id}" onclick="select1rm('${ex.id}')">${ex.name}</button>`
+    ).join('');
+  }
+  requestAnimationFrame(() => render1rmChart());
+
+  // Time chart
+  const timeMins = weeks.map(wk => weekSessionMins(wk));
+  const kcals    = weeks.map(wk => weekKcal(wk));
+  requestAnimationFrame(() => {
+    drawBarChart('timeChart',  labels, timeMins, '#60A5FA');
+    drawBarChart('kcalChart',  labels, kcals,    '#FBBF24');
+  });
+
+  // Summary cards
+  const totalMins  = timeMins.reduce((a,b)=>a+b,0);
+  const totalKcals = kcals.reduce((a,b)=>a+b,0);
+  const el1 = document.getElementById('scTotalTime');
+  const el2 = document.getElementById('scTotalKcal');
+  if (el1) el1.innerHTML = `${totalMins}<span> 분</span>`;
+  if (el2) el2.innerHTML = `${totalKcals.toLocaleString()}<span> kcal</span>`;
+}
+
+// ═══ REORDER & SUPERSET ═══════════════════════════════════════════════
+let S_order      = JSON.parse(localStorage.getItem('sfgrind_order')  || '{}');
+let S_supersets  = JSON.parse(localStorage.getItem('sfgrind_ss')     || '{}');
+function saveOrder()    { localStorage.setItem('sfgrind_order', JSON.stringify(S_order)); }
+function saveSupersets(){ localStorage.setItem('sfgrind_ss',    JSON.stringify(S_supersets)); }
+
+let reorderMode   = false;
+let supersetMode  = false;
+let ssSelected    = [];
+let longPressTimer = null;
+
+// ── REORDER ─────────────────────────────────────────────────────────
+function toggleReorderMode() {
+  if(supersetMode) exitSupersetMode();
+  reorderMode = !reorderMode;
+  if(reorderMode) enterReorderMode();
+  else exitReorderMode();
+}
+
+function enterReorderMode(e) {
+  if(e) e.preventDefault();
+  reorderMode = true;
+  document.getElementById('reorderBar').classList.add('active');
+  document.getElementById('dayContent').classList.add('reorder-active');
+  // re-render to update toolbar button state
+  const btn = document.querySelector('.toolbar-btn[title="순서 변경"]');
+  if(btn) btn.classList.add('active-reorder');
+  if(navigator.vibrate) navigator.vibrate(40);
+}
+
+function exitReorderMode() {
+  reorderMode = false;
+  document.getElementById('reorderBar').classList.remove('active');
+  document.getElementById('dayContent').classList.remove('reorder-active');
+  const btn = document.querySelector('.toolbar-btn[title="순서 변경"]');
+  if(btn) btn.classList.remove('active-reorder');
+}
+
+function handleLongPress(id, e) {
+  cancelLongPress();
+  longPressTimer = setTimeout(() => {
+    if(!reorderMode) { enterReorderMode(null); if(navigator.vibrate) navigator.vibrate(40); }
+  }, 500);
+}
+function cancelLongPress() { clearTimeout(longPressTimer); }
+
+function reorderMove(id, dir, e) {
+  e.stopPropagation();
+  const wk = currentWeek, dk = DAYS[activeDay];
+  const rows = [...document.querySelectorAll('#dayContent .exercise-item')];
+  let ids = rows.map(r => r.dataset.id).filter(Boolean);
+  const idx = ids.indexOf(id);
+  if(idx < 0) return;
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= ids.length) return;
+  [ids[idx], ids[newIdx]] = [ids[newIdx], ids[idx]];
+  setFlatOrder(wk, dk, ids);
+  renderContent();
+  requestAnimationFrame(() => enterReorderMode(null));
+}
+
+function getFlatOrder(wk, dk) { return S_order[wk]?.[dk] || null; }
+function setFlatOrder(wk, dk, arr) { (S_order[wk] ??= {})[dk] = arr; saveOrder(); }
+
+// ── SUPERSET ─────────────────────────────────────────────────────────
+function toggleSupersetMode() {
+  if(reorderMode) exitReorderMode();
+  supersetMode = !supersetMode;
+  if(supersetMode) enterSupersetMode();
+  else exitSupersetMode();
+}
+
+function enterSupersetMode() {
+  supersetMode = true;
+  ssSelected = [];
+  document.getElementById('supersetBar').classList.add('active');
+  document.getElementById('dayContent').classList.add('superset-active');
+  document.getElementById('supersetBarLabel').textContent = '묶을 운동 2개를 탭하세요';
+  const btn = document.querySelector('.toolbar-btn[title="슈퍼세트"]');
+  if(btn) btn.classList.add('active-ss');
+}
+
+function exitSupersetMode() {
+  supersetMode = false;
+  ssSelected = [];
+  document.getElementById('supersetBar').classList.remove('active');
+  document.getElementById('dayContent').classList.remove('superset-active');
+  const btn = document.querySelector('.toolbar-btn[title="슈퍼세트"]');
+  if(btn) btn.classList.remove('active-ss');
+  // clear selections
+  document.querySelectorAll('.exercise-item.ss-selected').forEach(r => r.classList.remove('ss-selected'));
+  document.querySelectorAll('.ss-circle').forEach(c => { c.classList.remove('picked'); c.textContent=''; });
+}
+
+// Row click handler — used for superset selection
+function handleItemClick(id, e) {
+  if(!supersetMode) return;
+  e.stopPropagation();
+  // Toggle selection
+  const row    = document.getElementById('row-'+id);
+  const circle = document.getElementById('ssc-'+id);
+  if(ssSelected.includes(id)) {
+    ssSelected = ssSelected.filter(x => x!==id);
+    row?.classList.remove('ss-selected');
+    if(circle){ circle.classList.remove('picked'); circle.textContent=''; }
+  } else {
+    if(ssSelected.length >= 2) return; // max 2
+    ssSelected.push(id);
+    row?.classList.add('ss-selected');
+    if(circle){ circle.classList.add('picked'); circle.textContent='✓'; }
+  }
+
+  if(ssSelected.length === 2) {
+    // Commit superset
+    const wk = currentWeek, dk = DAYS[activeDay];
+    (S_supersets[wk] ??= {})[dk] = [
+      ...(S_supersets[wk]?.[dk] || []).filter(g => !g.some(x => ssSelected.includes(x))),
+      [...ssSelected]
+    ];
+    saveSupersets();
+    exitSupersetMode();
+    renderContent();
+    showToast('🔗 슈퍼세트 설정됨!');
+  } else {
+    document.getElementById('supersetBarLabel').textContent =
+      ssSelected.length === 1 ? '1개 선택됨 — 하나 더 탭하세요' : '묶을 운동 2개를 탭하세요';
+  }
+}
+
+// Unlink superset by tapping connector (or long-press on item in normal mode)
+function unlinkSuperset(id) {
+  const wk = currentWeek, dk = DAYS[activeDay];
+  const groups = S_supersets[wk]?.[dk] || [];
+  (S_supersets[wk] ??= {})[dk] = groups.filter(g => !g.includes(id));
+  saveSupersets();
+  renderContent();
+  showToast('슈퍼세트 해제됨');
+}
+
+// handleSupersetClick kept for connector tap
+function handleSupersetClick(id, e) {
+  e.stopPropagation();
+  if(!supersetMode) unlinkSuperset(id);
+  else handleItemClick(id, e);
+}
+
+// ═══ ADD EXERCISE ══════════════════════════════════════════════════════
+// Custom exercises are stored per week+day
+// S_customEx: { [weekKey]: { [dayKey]: [ {id, name, type, tags, noFields, detail, fieldDef} ] } }
+let S_customEx = JSON.parse(localStorage.getItem('sfgrind_customex') || '{}');
+function saveCustomEx() { localStorage.setItem('sfgrind_customex', JSON.stringify(S_customEx)); }
+
+let addexType     = 'weight';
+let addexSection  = 0;
+let editExId      = null;
+let editExDayKey  = null;
+
+const CARDIO_TYPES = ['treadmill','cycle','stairmaster','outdoor','swim'];
+
+const ADDEX_FIELD_DEFS = {
+  weight: {
+    fields: [
+      {id:'name', label:'운동 이름', type:'text', placeholder:'예: 덤벨 플라이', full:true},
+      {id:'kg',   label:'중량 KG',  type:'number', placeholder:'0',  unit:'kg'},
+      {id:'sets', label:'세트',     type:'number', placeholder:'3',  unit:'세트'},
+      {id:'reps', label:'횟수',     type:'number', placeholder:'12', unit:'회'},
+    ],
+    tags:[], noFields:false,
+  },
+  // ── 트레드밀: 속도 · 경사도 · 시간 ──
+  treadmill: {
+    fields: [
+      {id:'name',     label:'운동 이름', type:'text',   placeholder:'트레드밀', full:true},
+      {id:'speed',    label:'속도',      type:'number', placeholder:'8.0', unit:'km/h', step:'0.5'},
+      {id:'incline',  label:'경사도',    type:'number', placeholder:'0',   unit:'%',   step:'0.5'},
+      {id:'duration', label:'시간',      type:'number', placeholder:'30',  unit:'분'},
+    ],
+    tags:['cardio'], noFields:true, cardioType:'treadmill',
+    detailFn: f => {
+      const p=[];
+      if(f.speed)   p.push(f.speed+'km/h');
+      if(f.incline && parseFloat(f.incline)>0) p.push('경사 '+f.incline+'%');
+      if(f.duration) p.push(f.duration+'분');
+      return p.join(' · ');
+    },
+  },
+  // ── 싸이클: 저항레벨 · RPM · 시간 ──
+  cycle: {
+    fields: [
+      {id:'name',       label:'운동 이름', type:'text',   placeholder:'싸이클', full:true},
+      {id:'resistance', label:'저항',      type:'number', placeholder:'5',    unit:'레벨', step:'1'},
+      {id:'rpm',        label:'RPM',       type:'number', placeholder:'80',   unit:'rpm',  step:'1'},
+      {id:'duration',   label:'시간',      type:'number', placeholder:'30',   unit:'분'},
+    ],
+    tags:['cardio'], noFields:true, cardioType:'cycle',
+    detailFn: f => {
+      const p=[];
+      if(f.resistance) p.push('저항 '+f.resistance);
+      if(f.rpm)        p.push(f.rpm+'rpm');
+      if(f.duration)   p.push(f.duration+'분');
+      return p.join(' · ');
+    },
+  },
+  // ── 스테퍼(천국의 계단): 레벨 · 시간 ──
+  stairmaster: {
+    fields: [
+      {id:'name',     label:'운동 이름', type:'text',   placeholder:'천국의 계단', full:true},
+      {id:'level',    label:'속도 레벨', type:'number', placeholder:'6',  unit:'레벨', step:'1'},
+      {id:'duration', label:'시간',      type:'number', placeholder:'20', unit:'분'},
+    ],
+    tags:['cardio'], noFields:true, cardioType:'stairmaster',
+    detailFn: f => {
+      const p=[];
+      if(f.level)    p.push('레벨 '+f.level);
+      if(f.duration) p.push(f.duration+'분');
+      return p.join(' · ');
+    },
+  },
+  // ── 야외 러닝: 거리 · 시간 ──
+  outdoor: {
+    fields: [
+      {id:'name',     label:'운동 이름', type:'text',   placeholder:'야외 러닝', full:true},
+      {id:'distance', label:'거리',      type:'number', placeholder:'5',   unit:'km',  step:'0.1'},
+      {id:'duration', label:'시간',      type:'number', placeholder:'30',  unit:'분'},
+    ],
+    tags:['cardio'], noFields:true, cardioType:'outdoor',
+    detailFn: f => {
+      const p=[];
+      if(f.distance) p.push(f.distance+'km');
+      if(f.duration) p.push(f.duration+'분');
+      return p.join(' · ');
+    },
+  },
+  // ── 수영: 거리 · 시간 ──
+  swim: {
+    fields: [
+      {id:'name',     label:'운동 이름', type:'text',   placeholder:'수영', full:true},
+      {id:'distance', label:'거리',      type:'number', placeholder:'1000', unit:'m', step:'50'},
+      {id:'duration', label:'시간',      type:'number', placeholder:'30',   unit:'분'},
+    ],
+    tags:['cardio'], noFields:true, cardioType:'swim',
+    detailFn: f => {
+      const p=[];
+      if(f.distance) p.push(f.distance+'m');
+      if(f.duration) p.push(f.duration+'분');
+      return p.join(' · ');
+    },
+  },
+  basketball: {
+    fields: [
+      {id:'name',     label:'운동 이름', type:'text',   placeholder:'농구', full:true},
+      {id:'duration', label:'시간',      type:'number', placeholder:'60', unit:'분'},
+    ],
+    tags:['ball'], noFields:true,
+    detailFn: f => `${f.duration||'?'}분`,
+  },
+  stretch: {
+    fields: [
+      {id:'name',     label:'운동 이름', type:'text',   placeholder:'스트레칭', full:true},
+      {id:'duration', label:'시간',      type:'number', placeholder:'10', unit:'분'},
+    ],
+    tags:['safe'], noFields:true,
+    detailFn: f => `${f.duration||'?'}분`,
+  },
+  custom: {
+    fields: [
+      {id:'name',   label:'운동 이름', type:'text', placeholder:'이름을 입력하세요', full:true},
+      {id:'detail', label:'상세 메모', type:'text', placeholder:'세트, 중량, 시간 등', full:true},
+    ],
+    tags:[], noFields:true,
+    detailFn: f => f.detail || '',
+  },
+};
+
+function openAddEx() {
+  const dk = DAYS[activeDay];
+  const r  = DEFAULT_ROUTINE[dk];
+  if (!r) { showToast('휴식일엔 추가할 수 없어요'); return; }
+  editExId = null; editExDayKey = null;
+  addexType = 'weight'; addexSection = 0;
+  document.getElementById('addexTitle').textContent      = '운동 추가';
+  document.getElementById('addexSubtitle').textContent   = '오늘 루틴에 운동을 추가해요';
+  document.getElementById('addexConfirmBtn').textContent = '추가하기';
+  document.getElementById('addexSectionWrap').style.display = '';
+  document.getElementById('addexSheet').classList.remove('edit-mode');
+  document.querySelectorAll('.addex-type').forEach(b => b.classList.toggle('selected', b.dataset.type==='weight'));
+  renderAddExFields();
+  renderAddExSections();
+  document.getElementById('addexOverlay').classList.add('open');
+}
+
+function openEditEx(dk, id, e) {
+  if(e) e.stopPropagation();
+  const r = DEFAULT_ROUTINE[dk];
+  if(!r) return;
+  const item = r.sections.flatMap(s=>s.items).find(i=>i.id===id);
+  if(!item) return;
+
+  editExId = id; editExDayKey = dk;
+  const currentName = getItemName(dk, id, item.name);
+
+  // Guess type from item
+  addexType = item.noFields ? 'custom' : 'weight';
+
+  document.getElementById('addexTitle').textContent      = '운동 수정';
+  document.getElementById('addexSubtitle').textContent   = `"${currentName}" 이름 · 종류 변경`;
+  document.getElementById('addexConfirmBtn').textContent = '수정 완료';
+  document.getElementById('addexSectionWrap').style.display = 'none';
+  document.getElementById('addexSheet').classList.add('edit-mode');
+  document.querySelectorAll('.addex-type').forEach(b => b.classList.toggle('selected', b.dataset.type===addexType));
+
+  renderAddExFields();
+
+  // Pre-fill current name and goal values
+  requestAnimationFrame(() => {
+    const ni = document.getElementById('aef_name');
+    if(ni) ni.value = currentName;
+    const f = getFields(currentWeek, dk, id);
+    if(document.getElementById('aef_kg'))   document.getElementById('aef_kg').value   = f.kg   || '';
+    if(document.getElementById('aef_sets')) document.getElementById('aef_sets').value = f.sets || '';
+    if(document.getElementById('aef_reps')) document.getElementById('aef_reps').value = f.reps || '';
+  });
+
+  document.getElementById('addexOverlay').classList.add('open');
+}
+
+function closeAddEx(e) {
+  if (e && document.getElementById('addexSheet').contains(e.target)) return;
+  document.getElementById('addexOverlay').classList.remove('open');
+  editExId = null; editExDayKey = null;
+}
+
+function selectAddExType(type) {
+  addexType = type;
+  document.querySelectorAll('.addex-type').forEach(b =>
+    b.classList.toggle('selected', b.dataset.type === type));
+  renderAddExFields();
+  // Re-fill name if in edit mode
+  if(editExId && editExDayKey) {
+    requestAnimationFrame(() => {
+      const ni = document.getElementById('aef_name');
+      if(ni && !ni.value) {
+        const item = DEFAULT_ROUTINE[editExDayKey]?.sections.flatMap(s=>s.items).find(i=>i.id===editExId);
+        if(item) ni.value = getItemName(editExDayKey, editExId, item.name);
+      }
+    });
+  }
+}
+
+function renderAddExFields() {
+  const def = ADDEX_FIELD_DEFS[addexType];
+  const el  = document.getElementById('addexFields');
+  let html  = '';
+  // group non-full fields in rows of 3
+  let rowFields = [];
+  def.fields.forEach((f, i) => {
+    if (f.full) {
+      if (rowFields.length) { html += wrapRow(rowFields); rowFields = []; }
+      html += `<div class="addex-field">
+        <div class="addex-label">${f.label}</div>
+        <input class="addex-input" id="aef_${f.id}" type="${f.type}" placeholder="${f.placeholder}" ${f.step?`step="${f.step}"`:''}/>
+      </div>`;
+    } else {
+      rowFields.push(f);
+      if (rowFields.length === 3 || i === def.fields.length-1) {
+        html += wrapRow(rowFields); rowFields = [];
+      }
+    }
+  });
+  el.innerHTML = html;
+  // Set default name for non-weight/custom types
+  if (addexType !== 'custom' && addexType !== 'weight') {
+    const nameMap = {
+      treadmill:'트레드밀', cycle:'싸이클', stairmaster:'천국의 계단',
+      outdoor:'야외 러닝', swim:'수영', basketball:'농구', stretch:'스트레칭'
+    };
+    const ni = document.getElementById('aef_name');
+    if (ni && !ni.value) ni.value = nameMap[addexType] || '';
+  }
+}
+
+function wrapRow(fields) {
+  return `<div class="addex-row">${fields.map(f =>
+    `<div class="addex-field">
+      <div class="addex-label">${f.label}${f.unit ? ` (${f.unit})` : ''}</div>
+      <input class="addex-input" id="aef_${f.id}" type="${f.type}"
+        placeholder="${f.placeholder}" ${f.step?`step="${f.step}"`:''}/>
+    </div>`
+  ).join('')}</div>`;
+}
+
+function renderAddExSections() {
+  const dk = DAYS[activeDay];
+  const r  = DEFAULT_ROUTINE[dk];
+  if (!r) return;
+  document.getElementById('addexSections').innerHTML = r.sections.map((sec, i) =>
+    `<button class="addex-section-opt${i===addexSection?' selected':''}"
+      onclick="selectAddExSection(${i})">${sec.label}</button>`
+  ).join('');
+}
+
+function selectAddExSection(idx) {
+  addexSection = idx;
+  document.querySelectorAll('.addex-section-opt').forEach((b,i) =>
+    b.classList.toggle('selected', i === idx));
+}
+
+function confirmAddEx() {
+  const def    = ADDEX_FIELD_DEFS[addexType];
+  const nameEl = document.getElementById('aef_name');
+  const name   = nameEl?.value.trim();
+  if (!name) { showToast('⚠️ 운동 이름을 입력해주세요'); return; }
+
+  const fvals = {};
+  def.fields.forEach(f => {
+    const el = document.getElementById('aef_' + f.id);
+    if (el) fvals[f.id] = el.value.trim();
+  });
+
+  // ── EDIT MODE: update existing builtin item ──────────────────────
+  if (editExId && editExDayKey) {
+    const dk = editExDayKey;
+    const id = editExId;
+    const wk = currentWeek;
+
+    // Save new name
+    setItemName(dk, id, name);
+
+    // Update goal fields if weight type
+    if (!def.noFields) {
+      setFields(wk, dk, id, { kg: fvals.kg||'', sets: fvals.sets||'', reps: fvals.reps||'' });
+    }
+    // Cardio fields
+    if (CARDIO_TYPES.includes(addexType)) {
+      const firstVal  = fvals.speed || fvals.resistance || fvals.level || fvals.distance || '';
+      const secondVal = fvals.incline || fvals.rpm || '';
+      setFields(wk, dk, id, { kg: firstVal, sets: secondVal, reps: fvals.duration||'' });
+    }
+    saveAll();
+    document.getElementById('addexOverlay').classList.remove('open');
+    editExId = null; editExDayKey = null;
+    renderContent();
+    showToast(`✅ "${name}"으로 수정됨`);
+    return;
+  }
+
+  // ── ADD MODE ──────────────────────────────────────────────────────
+  let detail = '';
+  if (def.detailFn) detail = def.detailFn(fvals);
+  else if (fvals.detail) detail = fvals.detail;
+
+  const newId = 'cx_' + Date.now();
+  const dk    = DAYS[activeDay];
+  const wk    = currentWeek;
+
+  // Save to custom exercises store
+  if (!S_customEx[wk])     S_customEx[wk]     = {};
+  if (!S_customEx[wk][dk]) S_customEx[wk][dk] = [];
+  S_customEx[wk][dk].push({
+    id: newId, name, type: addexType,
+    tags: def.tags, noFields: def.noFields,
+    detail, sectionIdx: addexSection,
+    fieldVals: fvals,
+  });
+  saveCustomEx();
+
+  // Pre-fill fields storage for later display
+  if (!def.noFields && fvals.kg) {
+    setFields(wk, dk, newId, { kg: fvals.kg, sets: fvals.sets, reps: fvals.reps });
+    saveAll();
+  }
+  // For all cardio types: save primary value to kg, secondary to sets, duration to reps
+  if (CARDIO_TYPES.includes(addexType)) {
+    const firstVal = fvals.speed || fvals.resistance || fvals.level || fvals.distance || '';
+    const secondVal = fvals.incline || fvals.rpm || '';
+    setFields(wk, dk, newId, {
+      kg:   firstVal,
+      sets: secondVal,
+      reps: fvals.duration || '',
+    });
+    saveAll();
+  }
+
+  document.getElementById('addexOverlay').classList.remove('open');
+  renderContent();
+  showToast(`✅ "${name}" 추가됨`);
+}
+
+
+function buildFieldsHtml(wk, dk, id, fields, prevF) {
+  const pHint = prevHintHtml(prevF, fields);
+  return `<div class="ex-fields">
+    <div class="ex-field"><div class="ex-field-label">중량 KG</div>
+      <input class="ex-field-input" type="number" min="0" step="0.5"
+        placeholder="${prevF.kg||'—'}" value="${esc(fields.kg||'')}"
+        onchange="saveField('${wk}','${dk}','${id}','kg',this.value)" onclick="event.stopPropagation()"/></div>
+    <div class="ex-field"><div class="ex-field-label">세트</div>
+      <input class="ex-field-input" type="number" min="0" step="1"
+        placeholder="${prevF.sets||'—'}" value="${esc(fields.sets||'')}"
+        onchange="saveField('${wk}','${dk}','${id}','sets',this.value)" onclick="event.stopPropagation()"/></div>
+    <div class="ex-field"><div class="ex-field-label">횟수</div>
+      <input class="ex-field-input" type="number" min="0" step="1"
+        placeholder="${prevF.reps||'—'}" value="${esc(fields.reps||'')}"
+        onchange="saveField('${wk}','${dk}','${id}','reps',this.value)" onclick="event.stopPropagation()"/></div>
+  </div>${pHint}`;
+}
+
+// 유산소 타입별 인라인 필드 렌더
+// 스토리지: kg=첫번째값, sets=두번째값, reps=시간(분) 으로 재활용
+function buildCardioFieldsHtml(wk, dk, id, cardioType, init) {
+  const f = getFields(wk, dk, id);
+  const inp = (label, field, placeholder, step, unit) => `
+    <div class="ex-field">
+      <div class="ex-field-label">${label}${unit?' ('+unit+')':''}</div>
+      <input class="ex-field-input" type="number" min="0" step="${step||1}"
+        placeholder="${placeholder}" value="${esc(f[field]||init[field]||'')}"
+        onchange="saveField('${wk}','${dk}','${id}','${field}',this.value)"
+        onclick="event.stopPropagation()"/>
+    </div>`;
+
+  const timeField = inp('시간', 'reps', init.duration||'30', '1', '분');
+
+  if(cardioType === 'treadmill' || cardioType === 'running') {
+    return `<div class="ex-fields">
+      ${inp('속도', 'kg', init.speed||'8', '0.5', 'km/h')}
+      ${inp('경사도', 'sets', init.incline||'0', '0.5', '%')}
+      ${timeField}
+    </div>`;
+  }
+  if(cardioType === 'cycle') {
+    return `<div class="ex-fields">
+      ${inp('저항', 'kg', init.resistance||'5', '1', '레벨')}
+      ${inp('RPM', 'sets', init.rpm||'80', '1', 'rpm')}
+      ${timeField}
+    </div>`;
+  }
+  if(cardioType === 'stairmaster') {
+    return `<div class="ex-fields">
+      ${inp('속도레벨', 'kg', init.level||'6', '1', '레벨')}
+      ${timeField}
+    </div>`;
+  }
+  if(cardioType === 'outdoor') {
+    return `<div class="ex-fields">
+      ${inp('거리', 'kg', init.distance||'5', '0.1', 'km')}
+      ${timeField}
+    </div>`;
+  }
+  if(cardioType === 'swim') {
+    return `<div class="ex-fields">
+      ${inp('거리', 'kg', init.distance||'1000', '50', 'm')}
+      ${timeField}
+    </div>`;
+  }
+  // fallback
+  return `<div class="ex-fields">${timeField}</div>`;
+}
+
+// legacy alias
+function buildRunningFields(wk, dk, id, init) {
+  return buildCardioFieldsHtml(wk, dk, id, 'treadmill', init);
+}
+
+function getSvgDataFromName(name) {
+  const key = svgKeyFromName(name);
+  return key ? SVGS[key] : null;
+}
+
+function toggleCustomItem(wk, dk, id) {
+  const next = !getCheck(wk, dk, id);
+  setCheck(wk, dk, id, next);
+  saveAll();
+  const row = document.getElementById('row-' + id);
+  if (row) row.classList.toggle('checked', next);
+  // Update progress
+  const routine = DEFAULT_ROUTINE[dk];
+  const builtinItems = routine ? routine.sections.flatMap(s => s.items) : [];
+  const customs = S_customEx[wk]?.[dk] || [];
+  const allIds  = [...builtinItems.map(i=>i.id), ...customs.map(c=>c.id)];
+  const done    = allIds.filter(i => getCheck(wk, dk, i)).length;
+  const total   = allIds.length;
+  const pn = document.getElementById('pn-'+dk); if(pn) pn.innerHTML=`${done}<span>/${total}</span>`;
+  const pb = document.getElementById('pb-'+dk); if(pb) pb.style.width=Math.round(done/total*100)+'%';
+  renderTabs(); renderSummary();
+}
+
+function removeCustomEx(wk, dk, id) {
+  if (!S_customEx[wk]?.[dk]) return;
+  S_customEx[wk][dk] = S_customEx[wk][dk].filter(c => c.id !== id);
+  saveCustomEx();
+  renderContent();
+  showToast('🗑 삭제됨');
+}
+
+// ═══ INIT ═════════════════════════════════════════════════════════════
+setDate();
+document.getElementById('weightLabel').textContent = weightKg + 'kg 루틴';
+renderWeekNav(); renderSummary(); renderTabs(); renderContent();
+loadSessionForDay();
+setTimeout(maybeShowWeightConfirm, 2000);
+// ── PWA Service Worker 등록 ──────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
