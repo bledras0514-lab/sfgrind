@@ -1051,33 +1051,31 @@ var TIGER_SESSIONS = {
     name:'상체 B', emoji:'🔥', sub:'어깨·팔 (8세트/40분)',
     exercises:[
       {order:1, name:'사이드 레터럴 레이즈', type:'isolation', sets:2, repLow:12, repHigh:15},
-      {order:2, name:'덤벨 숄더프레스', type:'compound', sets:2, repLow:10, repHigh:12},
+      {order:2, name:'오버헤드프레스', type:'compound', sets:2, repLow:10, repHigh:12},
       {order:3, name:'덤벨 리어델트 스윙', type:'swing_isolation', sets:1, repLow:20, repHigh:20},
       {order:4, name:'바벨컬', type:'isolation', sets:1, repLow:6, repHigh:8},
-      {order:5, name:'라잉 트라이셉스 익스텐션', type:'isolation', sets:1, repLow:10, repHigh:12},
+      {order:5, name:'이지바 라잉 트라이셉스 익스텐션', type:'isolation', sets:1, repLow:10, repHigh:12},
       {order:6, name:'딥스', type:'compound', sets:1, repLow:10, repHigh:12, bw:true}
     ]
   },
   lower_a: {
-    name:'하체 A', emoji:'🦵', sub:'사두·햄스트링',
+    name:'하체 A', emoji:'🦵', sub:'사두·햄스트링 (6세트/40분)',
     exercises:[
       {order:1, name:'레그 익스텐션', type:'isolation', sets:1, repLow:12, repHigh:15},
       {order:2, name:'레그 프레스', type:'compound', sets:2, repLow:8, repHigh:10},
       {order:3, name:'레그 컬', type:'isolation', sets:1, repLow:12, repHigh:15},
-      {order:4, name:'덤벨 스티프 레그 데드리프트', type:'compound', sets:1, repLow:10, repHigh:12},
-      {order:5, name:'레그프레스 카프레이즈', type:'isolation', sets:1, repLow:15, repHigh:20},
-      {order:6, name:'데드버그', type:'core', sets:1, repLow:12, repHigh:15}
+      {order:4, name:'루마니안 데드리프트', type:'compound', sets:1, repLow:10, repHigh:12},
+      {order:5, name:'레그프레스 카프레이즈', type:'isolation', sets:1, repLow:15, repHigh:20}
     ]
   },
   lower_b: {
-    name:'하체 B', emoji:'⚡', sub:'스쿼트·기립근',
+    name:'하체 B', emoji:'⚡', sub:'스쿼트·햄스트링 (6세트/40분)',
     exercises:[
-      {order:1, name:'레그 컬', type:'isolation', sets:1, repLow:12, repHigh:15},
-      {order:2, name:'스쿼트', type:'compound', sets:2, repLow:6, repHigh:8},
-      {order:3, name:'레그 익스텐션', type:'isolation', sets:1, repLow:12, repHigh:15},
-      {order:4, name:'백 익스텐션', type:'compound', sets:1, repLow:12, repHigh:15},
-      {order:5, name:'시티드 카프레이즈', type:'isolation', sets:1, repLow:15, repHigh:20},
-      {order:6, name:'행잉 레그레이즈', type:'core', sets:1, repLow:12, repHigh:15}
+      {order:1, name:'레그 익스텐션', type:'isolation', sets:1, repLow:12, repHigh:15},
+      {order:2, name:'불가리안 스플릿 스쿼트', type:'compound', sets:2, repLow:8, repHigh:10},
+      {order:3, name:'레그 컬', type:'isolation', sets:1, repLow:12, repHigh:15},
+      {order:4, name:'루마니안 데드리프트', type:'compound', sets:1, repLow:10, repHigh:12},
+      {order:5, name:'케이블 크런치', type:'core', sets:1, repLow:12, repHigh:15}
     ]
   }
 };
@@ -1377,6 +1375,20 @@ function saveSetlog(wk,dk,id,data){ if(!S.setlog[wk])S.setlog[wk]={}; if(!S.setl
 // ══════════════════════════════════════════════════════════════════
 // 슬롯ID → 현재 운동 이름 (렌더/저장 공통)
 function resolveExName(wk, dk, id){
+  // 🐯 호랑이 코치 슬롯 (tiger_N)
+  if(typeof id==='string' && id.indexOf('tiger_')===0){
+    // 교체된 이름 우선
+    var override = (S.names[dk] && S.names[dk][id]);
+    if(override) return override;
+    // 기본: 현재 세션에서 order로 찾기
+    var sess = getTigerSession(wk, dk);
+    if(sess && TIGER_SESSIONS[sess]){
+      var ord = parseInt(id.replace('tiger_',''));
+      var ex = TIGER_SESSIONS[sess].exercises.find(function(e){return e.order===ord;});
+      if(ex) return ex.name;
+    }
+    return '';
+  }
   var r = ROUTINE[dk];
   var item = null;
   if(r) item = r.sections.reduce(function(a,s){return a.concat(s.items);},[]).find(function(it){return it.id===id;});
@@ -2032,9 +2044,9 @@ function renderTigerSession(wk, dk, sessKey){
 
   exs.forEach(function(ex){
     var slotId = 'tiger_'+ex.order;
-    var exName = ex.name;
+    var exName = getName(dk, slotId, ex.name); // 교체 반영
     var chk = getCheck(wk, dk, slotId);
-    // 과부하 목표 계산
+    // 과부하 목표 계산 (교체된 이름 기준)
     var plan = calcOverload(exName, ex, wk);
     // 목표를 exGoal에 세팅 (아직 없으면)
     var curGoal = getExGoal(exName, wk);
@@ -2052,6 +2064,7 @@ function renderTigerSession(wk, dk, sessKey){
     html += '<div class="ex-chk" onclick="event.stopPropagation();toggleTigerItem(\''+wk+'\',\''+dk+'\',\''+slotId+'\')"><span class="chk-icon">✓</span></div>';
     html += typeTag;
     html += '<span class="ex-name">'+esc(exName)+(ex.bw?' 🏋️':'')+'</span>';
+    html += '<button class="ex-edit-btn" onclick="openEditTiger(\''+dk+'\',\''+slotId+'\',event)" title="교체">✏️</button>';
     html += '</div>';
 
     // 과부하 팁
@@ -2090,6 +2103,23 @@ function toggleTigerItem(wk, dk, slotId){
   setCheck(wk,dk,slotId,next); save();
   var row=document.getElementById('row-'+slotId); if(row)row.classList.toggle('checked',next);
   renderContent(); renderTabs(); renderSum();
+}
+
+// 호랑이 세션 운동 교체 (피커 재활용)
+function openEditTiger(dk, id, e){
+  e.stopPropagation();
+  if(document.activeElement && document.activeElement.blur){ document.activeElement.blur(); }
+  pickerEditId = id; pickerEditDk = dk; pickerSelected = null;
+  axEditId = null; axEditDk = null;
+  var curName = resolveExName(curWk, dk, id);
+  document.getElementById('addexTitle').textContent = '운동 교체';
+  document.getElementById('addexSub').textContent = '"' + curName + '" → 다른 운동으로 바꿔요';
+  document.getElementById('addexConfirm').textContent = '교체하기';
+  document.getElementById('addexConfirm').style.display = 'none';
+  document.getElementById('addexSecWrap').style.display = 'none';
+  document.getElementById('addexTypes').style.display = 'none';
+  renderExPicker('');
+  openModal('addexOverlay');
 }
 
 // 자유 운동일 렌더
